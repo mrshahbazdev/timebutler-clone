@@ -1,15 +1,25 @@
 <?php
 
 use App\Http\Controllers\AbsenceController;
+use App\Http\Controllers\CompanyRegistrationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TeamCalendarController;
 use App\Http\Controllers\TimeTrackingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+// Company Registration
+Route::get('/register-company', [CompanyRegistrationController::class, 'showForm'])->name('register-company');
+Route::post('/register-company', [CompanyRegistrationController::class, 'register'])->name('register-company.store');
 
 // Language switching
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
@@ -23,6 +33,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('absences', AbsenceController::class);
     Route::post('/absences/{absence}/approve', [AbsenceController::class, 'approve'])->name('absences.approve');
     Route::post('/absences/{absence}/reject', [AbsenceController::class, 'reject'])->name('absences.reject');
+    Route::post('/absences/{absence}/cancel', [AbsenceController::class, 'cancel'])->name('absences.cancel');
+    Route::get('/absences-team', [AbsenceController::class, 'managerIndex'])->name('absences.team');
+    Route::get('/absences/{absence}/decision-pdf', [AbsenceController::class, 'decisionPdf'])->name('absences.decision-pdf');
 
     // Time Tracking
     Route::resource('time-tracking', TimeTrackingController::class);
@@ -33,6 +46,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/calendar', function () {
         return view('calendar.index');
     })->name('calendar');
+    Route::get('/calendar/team', [TeamCalendarController::class, 'index'])->name('calendar.team');
+    Route::get('/calendar/team/pdf', [TeamCalendarController::class, 'pdf'])->name('calendar.team.pdf');
+
+    // Holidays
+    Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('/holidays/import', [HolidayController::class, 'import'])->name('holidays.import');
+    Route::delete('/holidays', [HolidayController::class, 'destroy'])->name('holidays.destroy');
 
     // Overtime
     Route::get('/overtime', function () {
@@ -40,19 +60,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('overtime.index');
 
     // Employees
-    Route::get('/employees', function () {
-        return view('employees.index');
-    })->name('employees.index');
+    Route::resource('employees', EmployeeController::class);
 
     // Departments
-    Route::get('/departments', function () {
-        return view('departments.index');
-    })->name('departments.index');
+    Route::resource('departments', DepartmentController::class)->except(['show']);
 
     // Reports
-    Route::get('/reports', function () {
-        return view('reports.index');
-    })->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/absences', [ReportController::class, 'absences'])->name('reports.absences');
+    Route::get('/reports/absences/pdf', [ReportController::class, 'absencesPdf'])->name('reports.absences.pdf');
+    Route::get('/reports/absences/excel', [ReportController::class, 'absencesExcel'])->name('reports.absences.excel');
+    Route::get('/reports/time-tracking', [ReportController::class, 'timeTracking'])->name('reports.time-tracking');
+    Route::get('/reports/time-tracking/pdf', [ReportController::class, 'timeTrackingPdf'])->name('reports.time-tracking.pdf');
+    Route::get('/reports/time-tracking/excel', [ReportController::class, 'timeTrackingExcel'])->name('reports.time-tracking.excel');
 
     // Settings
     Route::get('/settings', function () {

@@ -11,11 +11,15 @@
             </svg>
             {{ __('app.back') }}
         </a>
-        <h1 class="mt-2 text-2xl font-bold text-gray-900">{{ __('app.new_absence_request') }}</h1>
+        <h1 class="mt-2 text-2xl font-bold text-gray-900">{{ $requestType === 'blocked' ? __('app.block_vacation') : __('app.new_absence_request') }}</h1>
+        @if($requestType === 'blocked')
+        <p class="mt-1 text-sm text-amber-600">{{ __('app.block_vacation_hint') }}</p>
+        @endif
     </div>
 
     <form action="{{ route('absences.store') }}" method="POST" class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-6 space-y-6">
         @csrf
+        <input type="hidden" name="request_type" value="{{ $requestType }}">
 
         {{-- Absence Type --}}
         <div>
@@ -85,8 +89,8 @@
         {{-- Submit --}}
         <div class="flex items-center justify-end gap-x-3 pt-4 border-t border-gray-200">
             <a href="{{ route('absences.index') }}" class="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">{{ __('app.cancel') }}</a>
-            <button type="submit" class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-colors">
-                {{ __('app.submit_request') }}
+            <button type="submit" class="rounded-lg {{ $requestType === 'blocked' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-blue-600 hover:bg-blue-500' }} px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors">
+                {{ $requestType === 'blocked' ? __('app.block_vacation') : __('app.submit_request') }}
             </button>
         </div>
     </form>
