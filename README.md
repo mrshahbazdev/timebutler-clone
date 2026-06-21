@@ -1,58 +1,143 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# TimeButler - Employee Vacation & Absence Management
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive vacation and absence planner built with Laravel. Supports German holidays, school breaks by Bundesland, team calendars, PDF/Excel exports, and full DE/EN bilingual UI.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Vacation & Absence Management
+- **Request vacation** with date range, half-day support, and substitute selection
+- **Block vacation** (auto-approved, cancellable later)
+- **Cancel** pending or blocked vacation requests
+- **Vacation balance** dashboard: total / taken / requested / remaining with progress bar
+- **9 absence types** with unique colors: Vacation, Sick (with/without note), Sick Child, Home Office, Business Trip, Parental Leave, Special Leave, Continuing Education
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Holiday & Calendar Import
+- **German public holidays** for all 16 Bundeslaender with state-specific holidays (Epiphany, Corpus Christi, Reformation Day, etc.)
+- **School breaks** imported from [schulferien.org](https://www.schulferien.org) per Bundesland
+- **Weekend import** (optional)
+- Selectable year (current + 3 years ahead)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Team Calendar
+- Monthly grid view: employees as rows, days as columns
+- Color-coded absence types with opacity for pending requests
+- Holiday and weekend indicators
+- Department filter
+- **Printable PDF** (A3 landscape)
 
-## Learning Laravel
+### Manager Features
+- **Team requests** view: approve or reject with reason
+- **Email notifications**: manager notified on new request, employee notified on decision
+- **Decision letter PDF**: formal printable document with status, dates, and signature line
+- Enter other absence types (sick leave, child care, education) for employees
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Employee Management
+- Full CRUD with search, department/status filters, pagination
+- Profile page with recent absences, time entries, vacation balance
+- Role assignment (Admin, Manager, Employee) via Spatie Permissions
+- Soft delete (mark inactive)
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Department Management
+- Card grid with color indicator, employee count, manager display
+- Color picker, manager assignment
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Reports with Export
+- **Absence report**: date range filter, summary by type, PDF + Excel export
+- **Time tracking report**: date range + employee filter, total hours, PDF + Excel export
 
-## Agentic Development
+### Company Registration
+- Self-service registration at `/register-company`
+- Creates organization with Bundesland selection
+- Admin user with role assignment and vacation balance
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Bilingual UI (DE/EN)
+- Language switcher in navbar (globe icon)
+- Persisted per user session and user.locale field
+- Full translations for all modules
+
+## Tech Stack
+
+- **Backend**: Laravel 13, PHP 8.2+
+- **Frontend**: Tailwind CSS, Alpine.js, Vite
+- **Auth**: Laravel Breeze
+- **RBAC**: Spatie Laravel Permissions
+- **PDF**: barryvdh/laravel-dompdf
+- **Excel**: maatwebsite/excel
+- **Database**: MySQL / SQLite
+
+## Installation
 
 ```bash
-composer require laravel/boost --dev
+# Clone
+git clone https://github.com/mrshahbazdev/timebutler-clone.git
+cd timebutler-clone
 
-php artisan boost:install
+# Install dependencies
+composer install
+npm install
+
+# Environment
+cp .env.example .env
+php artisan key:generate
+
+# Database
+php artisan migrate --seed
+
+# Build assets
+npm run build
+
+# Serve
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Demo Credentials
 
-## Contributing
+| Role     | Email            | Password |
+|----------|------------------|----------|
+| Admin    | admin@demo.com   | password |
+| Manager  | manager@demo.com | password |
+| Employee | anna@demo.com    | password |
+| Employee | thomas@demo.com  | password |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Deployment (Apache)
 
-## Code of Conduct
+A root `.htaccess` file is included to redirect all requests to the `public/` directory. For Apache:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. Point your virtual host to the project root (or use the `.htaccess`)
+2. Ensure `mod_rewrite` is enabled: `a2enmod rewrite`
+3. Set `AllowOverride All` in your Apache config
+4. Run `composer install --optimize-autoloader --no-dev`
+5. Run `npm run build`
+6. Set `APP_ENV=production` and `APP_DEBUG=false` in `.env`
 
-## Security Vulnerabilities
+## Project Structure
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```
+app/
+  Http/Controllers/
+    AbsenceController.php       # Vacation requests, block, cancel, approve/reject
+    CompanyRegistrationController.php  # Self-service org registration
+    DepartmentController.php    # Department CRUD
+    EmployeeController.php      # Employee CRUD with filters
+    HolidayController.php       # Holiday import by Bundesland
+    ReportController.php        # Reports with PDF/Excel export
+    TeamCalendarController.php  # Monthly team calendar + PDF
+  Models/
+    AbsenceRequest.php          # request_type: request|blocked
+    Holiday.php                 # public_holiday|school_break|weekend|custom
+    Organization.php            # federal_state for Bundesland
+  Notifications/
+    AbsenceRequestNotification.php   # Email to manager
+    AbsenceDecisionNotification.php  # Email to employee
+  Services/
+    GermanHolidayService.php    # 16 Bundeslaender, easter calc, schulferien.org scraper
+  Exports/
+    AbsenceReportExport.php     # Excel export
+    TimeTrackingReportExport.php
+lang/
+  de/app.php                    # German translations
+  en/app.php                    # English translations
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
