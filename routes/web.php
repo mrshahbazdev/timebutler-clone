@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\AbsenceController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TimeTrackingController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,19 +43,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('overtime.index');
 
     // Employees
-    Route::get('/employees', function () {
-        return view('employees.index');
-    })->name('employees.index');
+    Route::resource('employees', EmployeeController::class);
 
     // Departments
-    Route::get('/departments', function () {
-        return view('departments.index');
-    })->name('departments.index');
+    Route::resource('departments', DepartmentController::class)->except(['show']);
 
     // Reports
-    Route::get('/reports', function () {
-        return view('reports.index');
-    })->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/absences', [ReportController::class, 'absences'])->name('reports.absences');
+    Route::get('/reports/absences/pdf', [ReportController::class, 'absencesPdf'])->name('reports.absences.pdf');
+    Route::get('/reports/absences/excel', [ReportController::class, 'absencesExcel'])->name('reports.absences.excel');
+    Route::get('/reports/time-tracking', [ReportController::class, 'timeTracking'])->name('reports.time-tracking');
+    Route::get('/reports/time-tracking/pdf', [ReportController::class, 'timeTrackingPdf'])->name('reports.time-tracking.pdf');
+    Route::get('/reports/time-tracking/excel', [ReportController::class, 'timeTrackingExcel'])->name('reports.time-tracking.excel');
 
     // Settings
     Route::get('/settings', function () {
