@@ -1,0 +1,120 @@
+<?php
+
+return [
+    // Navigation
+    'dashboard' => 'Dashboard',
+    'absences' => 'Absences',
+    'time_tracking' => 'Time Tracking',
+    'employees' => 'Employees',
+    'reports' => 'Reports',
+    'settings' => 'Settings',
+    'calendar' => 'Calendar',
+    'overtime' => 'Overtime',
+    'vacation' => 'Vacation',
+    'departments' => 'Departments',
+
+    // Dashboard
+    'welcome_back' => 'Welcome back',
+    'todays_overview' => "Today's Overview",
+    'pending_requests' => 'Pending Requests',
+    'team_absences_today' => 'Team Absences Today',
+    'my_vacation_balance' => 'My Vacation Balance',
+    'overtime_balance' => 'Overtime Balance',
+    'hours_today' => 'Hours Today',
+    'days_remaining' => 'days remaining',
+    'hours' => 'hours',
+    'minutes' => 'minutes',
+    'days' => 'days',
+
+    // Absence Management
+    'new_absence_request' => 'New Absence Request',
+    'absence_type' => 'Absence Type',
+    'start_date' => 'Start Date',
+    'end_date' => 'End Date',
+    'half_day' => 'Half Day',
+    'substitute' => 'Substitute',
+    'notes' => 'Notes',
+    'submit_request' => 'Submit Request',
+    'cancel' => 'Cancel',
+    'approve' => 'Approve',
+    'reject' => 'Reject',
+    'approved' => 'Approved',
+    'rejected' => 'Rejected',
+    'pending' => 'Pending',
+    'cancelled' => 'Cancelled',
+
+    // Absence Types
+    'vacation_leave' => 'Vacation',
+    'sick_leave' => 'Sick Leave',
+    'home_office' => 'Home Office',
+    'business_trip' => 'Business Trip',
+    'parental_leave' => 'Parental Leave',
+    'special_leave' => 'Special Leave',
+    'unpaid_leave' => 'Unpaid Leave',
+    'training' => 'Training',
+
+    // Time Tracking
+    'clock_in' => 'Clock In',
+    'clock_out' => 'Clock Out',
+    'break' => 'Break',
+    'start_time' => 'Start Time',
+    'end_time' => 'End Time',
+    'break_duration' => 'Break Duration',
+    'total_hours' => 'Total Hours',
+    'project' => 'Project',
+    'category' => 'Category',
+    'save_entry' => 'Save Entry',
+    'submit_timesheet' => 'Submit Timesheet',
+
+    // Status
+    'status' => 'Status',
+    'active' => 'Active',
+    'inactive' => 'Inactive',
+    'draft' => 'Draft',
+    'submitted' => 'Submitted',
+
+    // Common
+    'search' => 'Search',
+    'filter' => 'Filter',
+    'export' => 'Export',
+    'delete' => 'Delete',
+    'edit' => 'Edit',
+    'save' => 'Save',
+    'back' => 'Back',
+    'next' => 'Next',
+    'previous' => 'Previous',
+    'showing' => 'Showing',
+    'of' => 'of',
+    'results' => 'results',
+    'no_data' => 'No data available',
+    'confirm_delete' => 'Are you sure you want to delete this?',
+    'success' => 'Success',
+    'error' => 'Error',
+    'warning' => 'Warning',
+    'info' => 'Information',
+
+    // Profile & Settings
+    'profile' => 'Profile',
+    'my_profile' => 'My Profile',
+    'language' => 'Language',
+    'english' => 'English',
+    'german' => 'German',
+    'switch_language' => 'Switch Language',
+    'logout' => 'Logout',
+    'notifications' => 'Notifications',
+
+    // Employee Management
+    'employee_name' => 'Name',
+    'employee_email' => 'Email',
+    'employee_department' => 'Department',
+    'employee_position' => 'Position',
+    'employee_manager' => 'Manager',
+    'add_employee' => 'Add Employee',
+
+    // Reports
+    'generate_report' => 'Generate Report',
+    'date_range' => 'Date Range',
+    'report_type' => 'Report Type',
+    'download_pdf' => 'Download PDF',
+    'download_excel' => 'Download Excel',
+];
