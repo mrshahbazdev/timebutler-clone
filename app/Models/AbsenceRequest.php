@@ -10,7 +10,7 @@ class AbsenceRequest extends Model
     protected $fillable = [
         'user_id', 'organization_id', 'absence_type_id',
         'start_date', 'end_date', 'half_day_start', 'half_day_end',
-        'total_days', 'status', 'substitute_id', 'notes',
+        'total_days', 'status', 'request_type', 'substitute_id', 'notes',
         'rejection_reason', 'approved_by', 'approved_at', 'certificate_path',
     ];
 

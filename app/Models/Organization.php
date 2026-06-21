@@ -9,8 +9,8 @@ class Organization extends Model
 {
     protected $fillable = [
         'name', 'slug', 'logo_path', 'primary_color',
-        'country_code', 'timezone', 'default_locale',
-        'default_vacation_days', 'settings',
+        'country_code', 'federal_state', 'timezone', 'default_locale',
+        'default_vacation_days', 'work_hours_per_day', 'is_active', 'settings',
     ];
 
     protected $casts = [
@@ -40,5 +40,10 @@ class Organization extends Model
     public function timeEntries(): HasMany
     {
         return $this->hasMany(TimeEntry::class);
+    }
+
+    public function holidays(): HasMany
+    {
+        return $this->hasMany(Holiday::class);
     }
 }

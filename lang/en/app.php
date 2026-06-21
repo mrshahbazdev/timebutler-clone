@@ -117,4 +117,62 @@ return [
     'report_type' => 'Report Type',
     'download_pdf' => 'Download PDF',
     'download_excel' => 'Download Excel',
+
+    // Holidays
+    'holidays' => 'Holidays',
+    'school_breaks' => 'School Breaks',
+    'public_holidays' => 'Public Holidays',
+    'weekends' => 'Weekends',
+    'federal_state' => 'Federal State',
+    'year' => 'Year',
+    'import' => 'Import',
+    'import_calendar' => 'Import Annual Calendar',
+    'holidays_imported' => ':count entries imported successfully',
+    'holidays_deleted' => 'All holidays deleted',
+    'no_holidays_imported' => 'No calendar data imported yet',
+    'use_import_form' => 'Use the form above to import holidays and school breaks',
+    'delete_all_holidays' => 'Delete all holidays for',
+    'school_breaks_source' => 'School break data from',
+
+    // Vacation Workflow
+    'request_vacation' => 'Request Vacation',
+    'block_vacation' => 'Block Vacation',
+    'blocked' => 'Blocked',
+    'requested' => 'Requested',
+    'total_days' => 'Total Days',
+    'days_taken' => 'Days Taken',
+    'days_requested' => 'Days Requested',
+    'used' => 'Used',
+    'block_vacation_hint' => 'Blocked vacation is automatically approved. You can cancel it later if plans change.',
+    'confirm_cancel' => 'Are you sure you want to cancel this?',
+    'cannot_cancel' => 'This request cannot be cancelled',
+
+    // Team Calendar
+    'team_calendar' => 'Team Calendar',
+    'team_requests' => 'Team Requests',
+    'legend' => 'Legend',
+    'print' => 'Print',
+    'all' => 'All',
+    'actions' => 'Actions',
+
+    // Decision Letter
+    'decision_letter' => 'Decision Letter',
+    'dear' => 'Dear',
+    'request_approved_text' => 'Your absence request has been approved.',
+    'request_rejected_text' => 'Your absence request has been rejected.',
+    'decided_by' => 'Decided by',
+    'decided_on' => 'Decided on',
+    'rejection_reason' => 'Reason for Rejection',
+
+    // Absence Types (additional)
+    'sick_with_note' => 'Sick Leave (with doctor\'s note)',
+    'sick_without_note' => 'Sick Leave (without note)',
+    'sick_child' => 'Sick Child Care',
+    'continuing_education' => 'Continuing Education',
+
+    // Registration
+    'register_company' => 'Register Company',
+    'company_name' => 'Company Name',
+    'create_account' => 'Create Account',
+    'already_registered' => 'Already registered?',
 ];
