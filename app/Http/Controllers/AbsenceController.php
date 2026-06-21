@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\AbsenceRequest;
 use App\Models\AbsenceType;
 use App\Models\User;
+use App\Models\VacationBalance;
+use App\Notifications\AbsenceDecisionNotification;
+use App\Notifications\AbsenceRequestNotification;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AbsenceController extends Controller
@@ -20,12 +24,23 @@ class AbsenceController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('absences.index', compact('absences'));
+        $vacationBalance = VacationBalance::where('user_id', $user->id)
+            ->where('year', now()->year)
+            ->first();
+
+        $requestedDays = AbsenceRequest::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereHas('absenceType', fn($q) => $q->where('deducts_vacation', true))
+            ->sum('total_days');
+
+        return view('absences.index', compact('absences', 'vacationBalance', 'requestedDays'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $user = auth()->user();
+        $requestType = $request->get('type', 'request');
+
         $absenceTypes = AbsenceType::where('organization_id', $user->organization_id)
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -37,7 +52,7 @@ class AbsenceController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('absences.create', compact('absenceTypes', 'colleagues'));
+        return view('absences.create', compact('absenceTypes', 'colleagues', 'requestType'));
     }
 
     public function store(Request $request)
@@ -50,19 +65,26 @@ class AbsenceController extends Controller
             'half_day_end' => 'boolean',
             'substitute_id' => 'nullable|exists:users,id',
             'notes' => 'nullable|string|max:1000',
+            'request_type' => 'in:request,blocked',
         ]);
 
         $user = $request->user();
+        $requestType = $validated['request_type'] ?? 'request';
 
-        // Calculate total days
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
-        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
         $totalDays = $startDate->diffInWeekdays($endDate) + 1;
 
-        if ($request->boolean('half_day_start')) $totalDays -= 0.5;
-        if ($request->boolean('half_day_end')) $totalDays -= 0.5;
+        if ($request->boolean('half_day_start')) {
+            $totalDays -= 0.5;
+        }
+        if ($request->boolean('half_day_end')) {
+            $totalDays -= 0.5;
+        }
 
-        AbsenceRequest::create([
+        $status = $requestType === 'blocked' ? 'approved' : 'pending';
+
+        $absence = AbsenceRequest::create([
             'user_id' => $user->id,
             'organization_id' => $user->organization_id,
             'absence_type_id' => $validated['absence_type_id'],
@@ -71,13 +93,42 @@ class AbsenceController extends Controller
             'half_day_start' => $request->boolean('half_day_start'),
             'half_day_end' => $request->boolean('half_day_end'),
             'total_days' => $totalDays,
-            'status' => 'pending',
+            'status' => $status,
+            'request_type' => $requestType,
             'substitute_id' => $validated['substitute_id'] ?? null,
             'notes' => $validated['notes'] ?? null,
+            'approved_by' => $requestType === 'blocked' ? $user->id : null,
+            'approved_at' => $requestType === 'blocked' ? now() : null,
         ]);
+
+        if ($requestType === 'request' && $user->manager) {
+            try {
+                $user->manager->notify(new AbsenceRequestNotification($absence));
+            } catch (\Exception $e) {
+                // Mail not configured, continue silently
+            }
+        }
 
         return redirect()->route('absences.index')
             ->with('success', __('app.success'));
+    }
+
+    public function cancel(AbsenceRequest $absence)
+    {
+        $user = auth()->user();
+
+        if ($absence->user_id !== $user->id) {
+            abort(403);
+        }
+
+        if (!in_array($absence->status, ['pending', 'approved'])) {
+            return redirect()->back()->with('error', __('app.cannot_cancel'));
+        }
+
+        $absence->update(['status' => 'cancelled']);
+
+        return redirect()->route('absences.index')
+            ->with('success', __('app.cancelled'));
     }
 
     public function approve(AbsenceRequest $absence)
@@ -87,6 +138,12 @@ class AbsenceController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        try {
+            $absence->user->notify(new AbsenceDecisionNotification($absence, 'approved'));
+        } catch (\Exception $e) {
+            // Mail not configured
+        }
 
         return redirect()->back()->with('success', __('app.approved'));
     }
@@ -100,6 +157,37 @@ class AbsenceController extends Controller
             'approved_at' => now(),
         ]);
 
+        try {
+            $absence->user->notify(new AbsenceDecisionNotification($absence, 'rejected'));
+        } catch (\Exception $e) {
+            // Mail not configured
+        }
+
         return redirect()->back()->with('success', __('app.rejected'));
+    }
+
+    public function managerIndex(Request $request)
+    {
+        $user = $request->user();
+
+        $teamMembers = User::where('manager_id', $user->id)->pluck('id');
+
+        $absences = AbsenceRequest::whereIn('user_id', $teamMembers)
+            ->when($request->get('status'), fn($q, $s) => $q->where('status', $s))
+            ->with(['user', 'absenceType'])
+            ->latest()
+            ->paginate(20);
+
+        return view('absences.manager-index', compact('absences'));
+    }
+
+    public function decisionPdf(AbsenceRequest $absence)
+    {
+        $absence->load(['user', 'absenceType', 'approver']);
+        $orgName = $absence->user->organization->name ?? 'Organization';
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('absences.pdf.decision', compact('absence', 'orgName'));
+
+        return $pdf->download("decision-{$absence->id}.pdf");
     }
 }

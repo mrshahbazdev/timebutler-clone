@@ -117,4 +117,62 @@ return [
     'report_type' => 'Berichtstyp',
     'download_pdf' => 'PDF herunterladen',
     'download_excel' => 'Excel herunterladen',
+
+    // Holidays
+    'holidays' => 'Feiertage',
+    'school_breaks' => 'Schulferien',
+    'public_holidays' => 'Gesetzliche Feiertage',
+    'weekends' => 'Wochenenden',
+    'federal_state' => 'Bundesland',
+    'year' => 'Jahr',
+    'import' => 'Importieren',
+    'import_calendar' => 'Jahreskalender importieren',
+    'holidays_imported' => ':count Einträge erfolgreich importiert',
+    'holidays_deleted' => 'Alle Feiertage gelöscht',
+    'no_holidays_imported' => 'Noch keine Kalenderdaten importiert',
+    'use_import_form' => 'Nutzen Sie das Formular oben, um Feiertage und Schulferien zu importieren',
+    'delete_all_holidays' => 'Alle Feiertage löschen für',
+    'school_breaks_source' => 'Schulferien-Daten von',
+
+    // Vacation Workflow
+    'request_vacation' => 'Urlaub beantragen',
+    'block_vacation' => 'Urlaub blocken',
+    'blocked' => 'Geblockt',
+    'requested' => 'Beantragt',
+    'total_days' => 'Gesamttage',
+    'days_taken' => 'Genommene Tage',
+    'days_requested' => 'Beantragte Tage',
+    'used' => 'Genutzt',
+    'block_vacation_hint' => 'Geblockter Urlaub wird automatisch genehmigt. Sie können ihn später stornieren, wenn sich Pläne ändern.',
+    'confirm_cancel' => 'Sind Sie sicher, dass Sie dies stornieren möchten?',
+    'cannot_cancel' => 'Dieser Antrag kann nicht storniert werden',
+
+    // Team Calendar
+    'team_calendar' => 'Teamkalender',
+    'team_requests' => 'Team-Anträge',
+    'legend' => 'Legende',
+    'print' => 'Drucken',
+    'all' => 'Alle',
+    'actions' => 'Aktionen',
+
+    // Decision Letter
+    'decision_letter' => 'Bescheid',
+    'dear' => 'Sehr geehrte(r)',
+    'request_approved_text' => 'Ihr Abwesenheitsantrag wurde genehmigt.',
+    'request_rejected_text' => 'Ihr Abwesenheitsantrag wurde leider abgelehnt.',
+    'decided_by' => 'Entschieden von',
+    'decided_on' => 'Entschieden am',
+    'rejection_reason' => 'Ablehnungsgrund',
+
+    // Absence Types (additional)
+    'sick_with_note' => 'Krankheit (mit Attest)',
+    'sick_without_note' => 'Krankheit (ohne Attest)',
+    'sick_child' => 'Kind krank',
+    'continuing_education' => 'Weiterbildung',
+
+    // Registration
+    'register_company' => 'Firma registrieren',
+    'company_name' => 'Firmenname',
+    'create_account' => 'Konto erstellen',
+    'already_registered' => 'Bereits registriert?',
 ];

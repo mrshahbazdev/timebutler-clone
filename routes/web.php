@@ -1,18 +1,25 @@
 <?php
 
 use App\Http\Controllers\AbsenceController;
+use App\Http\Controllers\CompanyRegistrationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TeamCalendarController;
 use App\Http\Controllers\TimeTrackingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+// Company Registration
+Route::get('/register-company', [CompanyRegistrationController::class, 'showForm'])->name('register-company');
+Route::post('/register-company', [CompanyRegistrationController::class, 'register'])->name('register-company.store');
 
 // Language switching
 Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
@@ -26,6 +33,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('absences', AbsenceController::class);
     Route::post('/absences/{absence}/approve', [AbsenceController::class, 'approve'])->name('absences.approve');
     Route::post('/absences/{absence}/reject', [AbsenceController::class, 'reject'])->name('absences.reject');
+    Route::post('/absences/{absence}/cancel', [AbsenceController::class, 'cancel'])->name('absences.cancel');
+    Route::get('/absences-team', [AbsenceController::class, 'managerIndex'])->name('absences.team');
+    Route::get('/absences/{absence}/decision-pdf', [AbsenceController::class, 'decisionPdf'])->name('absences.decision-pdf');
 
     // Time Tracking
     Route::resource('time-tracking', TimeTrackingController::class);
@@ -36,6 +46,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/calendar', function () {
         return view('calendar.index');
     })->name('calendar');
+    Route::get('/calendar/team', [TeamCalendarController::class, 'index'])->name('calendar.team');
+    Route::get('/calendar/team/pdf', [TeamCalendarController::class, 'pdf'])->name('calendar.team.pdf');
+
+    // Holidays
+    Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('/holidays/import', [HolidayController::class, 'import'])->name('holidays.import');
+    Route::delete('/holidays', [HolidayController::class, 'destroy'])->name('holidays.destroy');
 
     // Overtime
     Route::get('/overtime', function () {
