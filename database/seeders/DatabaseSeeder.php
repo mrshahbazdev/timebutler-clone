@@ -151,7 +151,7 @@ class DatabaseSeeder extends Seeder
 
         // Create sample absence requests for admin
         $vacationType = AbsenceType::where('name_en', 'Vacation')->first();
-        $sickType = AbsenceType::where('name_en', 'Sick Leave')->first();
+        $sickType = AbsenceType::where('name_en', 'Sick Leave (with note)')->first();
         $homeOfficeType = AbsenceType::where('name_en', 'Home Office')->first();
 
         AbsenceRequest::create([
