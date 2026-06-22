@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'TimeButler') }} - {{ $pageTitle ?? __('Login') }}</title>
+    <title>{{ config('app.name', 'TimeCheck') }} - {{ $pageTitle ?? __('Login') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -71,7 +71,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <span class="text-white text-2xl font-bold tracking-tight">TimeButler</span>
+                        <span class="text-white text-2xl font-bold tracking-tight">TimeCheck</span>
                     </div>
                 </div>
 
@@ -129,7 +129,7 @@
 
                 {{-- Footer --}}
                 <div class="flex items-center justify-between">
-                    <p class="text-blue-200 text-sm">&copy; {{ date('Y') }} TimeButler</p>
+                    <p class="text-blue-200 text-sm">&copy; {{ date('Y') }} TimeCheck</p>
                     {{-- Language switcher --}}
                     <div class="flex items-center gap-2">
                         <a href="{{ route('locale.switch', 'de') }}" class="px-2 py-1 rounded text-xs font-medium {{ app()->getLocale() === 'de' ? 'bg-white/20 text-white' : 'text-blue-200 hover:text-white' }} transition-colors">DE</a>
@@ -149,7 +149,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <span class="text-white text-xl font-bold">TimeButler</span>
+                    <span class="text-white text-xl font-bold">TimeCheck</span>
                 </div>
                 <p class="text-blue-100 text-sm">
                     {{ app()->getLocale() === 'de'
@@ -172,7 +172,7 @@
 
             {{-- Mobile footer --}}
             <div class="lg:hidden py-4 text-center">
-                <p class="text-gray-400 text-xs">&copy; {{ date('Y') }} TimeButler</p>
+                <p class="text-gray-400 text-xs">&copy; {{ date('Y') }} TimeCheck</p>
             </div>
         </div>
     </div>
