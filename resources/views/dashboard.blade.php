@@ -51,7 +51,23 @@
         </div>
 
         {{-- Hours Today --}}
-        <div class="relative overflow-hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        @php
+            $dashRunning = $todayEntry && $todayEntry->start_time && !$todayEntry->end_time;
+        @endphp
+        <div class="relative overflow-hidden rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5"
+             @if($dashRunning)
+             x-data="{
+                startTime: new Date('{{ now()->format('Y-m-d') }}T{{ $todayEntry->start_time }}'),
+                display: '0:00',
+                init() { this.tick(); setInterval(() => this.tick(), 1000); },
+                tick() {
+                    let s = Math.floor((Date.now() - this.startTime.getTime()) / 1000);
+                    let m = Math.floor(s / 60);
+                    this.display = Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+                }
+             }"
+             @endif
+        >
             <div class="flex items-center gap-x-4">
                 <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50">
                     <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -61,16 +77,24 @@
                 <div>
                     <p class="text-sm font-medium text-gray-500">{{ __('app.hours_today') }}</p>
                     <p class="mt-1 text-2xl font-bold text-gray-900">
-                        {{ $todayEntry ? $todayEntry->formatted_hours : '0:00' }}
+                        @if($dashRunning)
+                            <span x-text="display">0:00</span>
+                        @else
+                            {{ $todayEntry ? $todayEntry->formatted_hours : '0:00' }}
+                        @endif
                         <span class="text-sm font-normal text-gray-500">{{ __('app.hours') }}</span>
                     </p>
                 </div>
             </div>
             <div class="mt-4">
-                @if($todayEntry && $todayEntry->start_time)
+                @if($todayEntry && $todayEntry->start_time && !$todayEntry->end_time)
                     <span class="inline-flex items-center gap-x-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
                         <span class="h-1.5 w-1.5 rounded-full bg-green-600 animate-pulse"></span>
                         {{ __('app.clock_in') }}: {{ $todayEntry->start_time }}
+                    </span>
+                @elseif($todayEntry && $todayEntry->start_time)
+                    <span class="inline-flex items-center gap-x-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                        {{ $todayEntry->start_time }} - {{ $todayEntry->end_time }}
                     </span>
                 @else
                     <a href="{{ route('time-tracking.index') }}" class="inline-flex items-center gap-x-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 transition-colors">
