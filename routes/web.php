@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AbsenceController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CompanyRegistrationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
@@ -46,9 +47,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/time-tracking/clock-out', [TimeTrackingController::class, 'clockOut'])->name('time-tracking.clock-out');
 
     // Calendar
-    Route::get('/calendar', function () {
-        return view('calendar.index');
-    })->name('calendar');
+    Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/calendar/team', [TeamCalendarController::class, 'index'])->name('calendar.team');
     Route::get('/calendar/team/pdf', [TeamCalendarController::class, 'pdf'])->name('calendar.team.pdf');
 
