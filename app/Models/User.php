@@ -74,6 +74,11 @@ class User extends Authenticatable
         return $this->hasMany(VacationBalance::class);
     }
 
+    public function overtimeBalances(): HasMany
+    {
+        return $this->hasMany(OvertimeBalance::class);
+    }
+
     public function currentVacationBalance(): ?VacationBalance
     {
         return $this->vacationBalances()->where('year', now()->year)->first();
