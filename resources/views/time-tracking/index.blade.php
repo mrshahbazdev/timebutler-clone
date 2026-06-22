@@ -13,11 +13,51 @@
     </div>
 
     {{-- Clock In/Out Card --}}
-    <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-6">
+    @php
+        $isRunning = $todayEntry && $todayEntry->start_time && !$todayEntry->end_time;
+        $dailyTarget = auth()->user()->weekly_hours / 5;
+        $targetMinutes = $dailyTarget * 60;
+    @endphp
+    <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-6"
+         @if($isRunning)
+         x-data="{
+            startTime: new Date('{{ now()->format('Y-m-d') }}T{{ $todayEntry->start_time }}'),
+            elapsed: 0,
+            target: {{ $targetMinutes }},
+            hours: '0',
+            minutes: '00',
+            seconds: '00',
+            percent: 0,
+            init() {
+                this.tick();
+                setInterval(() => this.tick(), 1000);
+            },
+            tick() {
+                this.elapsed = Math.floor((Date.now() - this.startTime.getTime()) / 1000);
+                let totalMin = Math.floor(this.elapsed / 60);
+                this.hours = String(Math.floor(totalMin / 60));
+                this.minutes = String(totalMin % 60).padStart(2, '0');
+                this.seconds = String(this.elapsed % 60).padStart(2, '0');
+                this.percent = Math.min(100, (totalMin / Math.max(this.target, 1)) * 100);
+            }
+         }"
+         @elseif($todayEntry && $todayEntry->end_time)
+         x-data="{
+            hours: '{{ intdiv($todayEntry->total_minutes ?? 0, 60) }}',
+            minutes: '{{ str_pad(($todayEntry->total_minutes ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}',
+            seconds: '00',
+            percent: {{ min(100, (($todayEntry->total_minutes ?? 0) / max($targetMinutes, 1)) * 100) }}
+         }"
+         @else
+         x-data="{ hours: '0', minutes: '00', seconds: '00', percent: 0 }"
+         @endif
+    >
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-gray-900">{{ __('app.hours_today') }}</h2>
-                <p class="mt-1 text-3xl font-bold text-gray-900">{{ $todayEntry ? $todayEntry->formatted_hours : '0:00' }}</p>
+                <p class="mt-1 text-3xl font-bold text-gray-900">
+                    <span x-text="hours + ':' + minutes"></span><span class="text-xl text-gray-400" x-text="':' + seconds"></span>
+                </p>
                 @if($todayEntry && $todayEntry->start_time)
                 <p class="mt-1 text-sm text-gray-500">{{ __('app.start_time') }}: {{ $todayEntry->start_time }}</p>
                 @endif
@@ -52,22 +92,27 @@
         </div>
 
         {{-- Timer bar --}}
-        @if($todayEntry && $todayEntry->start_time && !$todayEntry->end_time)
+        @if($isRunning)
         <div class="mt-4">
             <div class="flex items-center gap-x-2">
                 <span class="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse"></span>
                 <span class="text-sm font-medium text-green-700">Recording...</span>
             </div>
             <div class="mt-2 h-2 w-full rounded-full bg-gray-100">
-                @php
-                    $start = \Carbon\Carbon::parse($todayEntry->start_time);
-                    $elapsed = $start->diffInMinutes(now());
-                    $targetMinutes = auth()->user()->weekly_hours * 60 / 5;
-                    $percent = min(100, ($elapsed / max($targetMinutes, 1)) * 100);
-                @endphp
-                <div class="h-2 rounded-full bg-green-500 transition-all" style="width: {{ $percent }}%"></div>
+                <div class="h-2 rounded-full bg-green-500 transition-all duration-1000" :style="'width: ' + percent + '%'"></div>
             </div>
-            <p class="mt-1 text-xs text-gray-500">{{ round($percent) }}% of daily target ({{ auth()->user()->weekly_hours / 5 }}h)</p>
+            <p class="mt-1 text-xs text-gray-500"><span x-text="Math.round(percent)">0</span>% of daily target ({{ $dailyTarget }}h)</p>
+        </div>
+        @elseif($todayEntry && $todayEntry->end_time)
+        <div class="mt-4">
+            <div class="flex items-center gap-x-2">
+                <span class="h-2.5 w-2.5 rounded-full bg-gray-400"></span>
+                <span class="text-sm font-medium text-gray-500">{{ app()->getLocale() === 'de' ? 'Abgeschlossen' : 'Completed' }}</span>
+            </div>
+            <div class="mt-2 h-2 w-full rounded-full bg-gray-100">
+                <div class="h-2 rounded-full bg-blue-500" :style="'width: ' + percent + '%'"></div>
+            </div>
+            <p class="mt-1 text-xs text-gray-500"><span x-text="Math.round(percent)">0</span>% of daily target ({{ $dailyTarget }}h)</p>
         </div>
         @endif
     </div>
