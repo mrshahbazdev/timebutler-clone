@@ -87,13 +87,50 @@
                         </div>
 
                         {{-- Notifications --}}
-                        <button type="button" class="relative -m-1.5 p-1.5 text-gray-400 hover:text-gray-500">
-                            <span class="sr-only">{{ __('app.notifications') }}</span>
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                            </svg>
-                            <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                        </button>
+                        @php
+                            $unreadNotifications = auth()->user()->unreadNotifications()->limit(10)->get();
+                            $unreadCount = auth()->user()->unreadNotifications()->count();
+                        @endphp
+                        <div class="relative" x-data="{ notifOpen: false }">
+                            <button @click="notifOpen = !notifOpen" type="button" class="relative -m-1.5 p-1.5 text-gray-400 hover:text-gray-500">
+                                <span class="sr-only">{{ __('app.notifications') }}</span>
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                </svg>
+                                @if($unreadCount > 0)
+                                <span class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                                @endif
+                            </button>
+                            <div x-show="notifOpen" @click.away="notifOpen = false" x-cloak
+                                 x-transition class="absolute right-0 z-10 mt-2.5 w-80 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-gray-900/5">
+                                <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                                    <h3 class="text-sm font-semibold text-gray-900">{{ __('app.notifications') }}</h3>
+                                    @if($unreadCount > 0)
+                                    <form action="{{ route('notifications.mark-all-read') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs text-blue-600 hover:text-blue-500 font-medium">
+                                            {{ app()->getLocale() === 'de' ? 'Alle gelesen' : 'Mark all read' }}
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
+                                <div class="max-h-64 overflow-y-auto divide-y divide-gray-100">
+                                    @forelse($unreadNotifications as $notification)
+                                    <form action="{{ route('notifications.mark-read', $notification->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors">
+                                            <p class="text-sm text-gray-900 line-clamp-2">{{ $notification->data['message_' . app()->getLocale()] ?? $notification->data['message_en'] ?? '' }}</p>
+                                            <p class="mt-1 text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
+                                        </button>
+                                    </form>
+                                    @empty
+                                    <div class="px-4 py-6 text-center text-sm text-gray-400">
+                                        {{ app()->getLocale() === 'de' ? 'Keine neuen Benachrichtigungen' : 'No new notifications' }}
+                                    </div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
 
                         <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200"></div>
 

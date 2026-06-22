@@ -17,7 +17,24 @@ class AbsenceRequestNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database', 'mail'];
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        $absence = $this->absence->load(['user', 'absenceType']);
+        return [
+            'type' => 'absence_request',
+            'absence_id' => $absence->id,
+            'employee_name' => $absence->user->name,
+            'absence_type' => $absence->absenceType->name ?? 'Absence',
+            'start_date' => $absence->start_date->format('d.m.Y'),
+            'end_date' => $absence->end_date->format('d.m.Y'),
+            'total_days' => $absence->total_days,
+            'message_de' => "{$absence->user->name} hat {$absence->absenceType->name_de} beantragt ({$absence->start_date->format('d.m.Y')} - {$absence->end_date->format('d.m.Y')})",
+            'message_en' => "{$absence->user->name} requested {$absence->absenceType->name_en} ({$absence->start_date->format('d.m.Y')} - {$absence->end_date->format('d.m.Y')})",
+            'url' => '/absences/team',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
