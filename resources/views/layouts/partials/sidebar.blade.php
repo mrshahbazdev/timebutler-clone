@@ -7,7 +7,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
-            <span class="text-xl font-bold text-white tracking-tight">Time<span class="text-blue-400">Butler</span></span>
+            <span class="text-xl font-bold text-white tracking-tight">Time<span class="text-blue-400">Check</span></span>
         </a>
     </div>
 
@@ -90,10 +90,12 @@
                 </ul>
             </li>
 
-            {{-- Management Section --}}
+            {{-- Management Section (admin/manager only) --}}
+            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
             <li>
-                <div class="text-xs font-semibold leading-6 text-slate-400 uppercase tracking-wider">{{ __('app.employees') }}</div>
+                <div class="text-xs font-semibold leading-6 text-slate-400 uppercase tracking-wider">{{ app()->getLocale() === 'de' ? 'Verwaltung' : 'Management' }}</div>
                 <ul role="list" class="-mx-2 mt-2 space-y-1">
+                    @if(auth()->user()->hasRole('admin'))
                     <li>
                         <a href="{{ route('employees.index') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -114,6 +116,7 @@
                             {{ __('app.departments') }}
                         </a>
                     </li>
+                    @endif
                     <li>
                         <a href="{{ route('absences.team') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -124,6 +127,7 @@
                             {{ __('app.team_requests') }}
                         </a>
                     </li>
+                    @if(auth()->user()->hasRole('admin'))
                     <li>
                         <a href="{{ route('reports.index') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -134,11 +138,14 @@
                             {{ __('app.reports') }}
                         </a>
                     </li>
+                    @endif
                 </ul>
             </li>
+            @endif
 
-            {{-- Settings at bottom --}}
+            {{-- Settings at bottom (admin only) --}}
             <li class="mt-auto">
+                @if(auth()->user()->hasRole('admin'))
                 <a href="{{ route('settings') }}"
                    class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
                           {{ request()->routeIs('settings') ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -148,6 +155,7 @@
                     </svg>
                     {{ __('app.settings') }}
                 </a>
+                @endif
             </li>
         </ul>
     </nav>

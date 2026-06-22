@@ -18,7 +18,24 @@ class AbsenceDecisionNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database', 'mail'];
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        $absence = $this->absence->load('absenceType');
+        $isApproved = $this->decision === 'approved';
+        return [
+            'type' => 'absence_decision',
+            'absence_id' => $absence->id,
+            'decision' => $this->decision,
+            'absence_type' => $absence->absenceType->name ?? 'Absence',
+            'start_date' => $absence->start_date->format('d.m.Y'),
+            'end_date' => $absence->end_date->format('d.m.Y'),
+            'message_de' => $isApproved ? "{$absence->absenceType->name_de} genehmigt ({$absence->start_date->format('d.m.Y')} - {$absence->end_date->format('d.m.Y')})" : "{$absence->absenceType->name_de} abgelehnt ({$absence->start_date->format('d.m.Y')} - {$absence->end_date->format('d.m.Y')})",
+            'message_en' => $isApproved ? "{$absence->absenceType->name_en} approved ({$absence->start_date->format('d.m.Y')} - {$absence->end_date->format('d.m.Y')})" : "{$absence->absenceType->name_en} rejected ({$absence->start_date->format('d.m.Y')} - {$absence->end_date->format('d.m.Y')})",
+            'url' => '/absences',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
