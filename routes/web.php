@@ -12,6 +12,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamCalendarController;
+use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\TimeTrackingController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,9 +59,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/holidays', [HolidayController::class, 'destroy'])->name('holidays.destroy');
 
     // Overtime
-    Route::get('/overtime', function () {
-        return view('overtime.index');
-    })->name('overtime.index');
+    Route::get('/overtime', [OvertimeController::class, 'index'])->name('overtime.index');
+    Route::get('/overtime/admin', [OvertimeController::class, 'admin'])->name('overtime.admin');
+    Route::post('/overtime/adjustment', [OvertimeController::class, 'storeAdjustment'])->name('overtime.store-adjustment');
+    Route::post('/overtime/bulk', [OvertimeController::class, 'bulkStore'])->name('overtime.bulk-store');
 
     // Employees
     Route::resource('employees', EmployeeController::class);
