@@ -118,8 +118,8 @@
                 </div>
             </div>
             <div class="mt-4">
-                <a href="{{ route('absences.index') }}?status=pending" class="text-xs font-medium text-blue-600 hover:text-blue-500">
-                    View all &rarr;
+                <a href="{{ route('absences.team', ['status' => 'pending']) }}" class="text-xs font-medium text-blue-600 hover:text-blue-500">
+                    {{ app()->getLocale() === 'de' ? 'Alle anzeigen' : 'View all' }} &rarr;
                 </a>
             </div>
         </div>
