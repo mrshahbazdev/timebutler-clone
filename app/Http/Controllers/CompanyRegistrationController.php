@@ -57,6 +57,7 @@ class CompanyRegistrationController extends Controller
 
         VacationBalance::create([
             'user_id' => $user->id,
+            'organization_id' => $organization->id,
             'year' => now()->year,
             'total_days' => 30,
             'used_days' => 0,
