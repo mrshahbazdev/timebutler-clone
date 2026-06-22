@@ -170,9 +170,14 @@ class AbsenceController extends Controller
     {
         $user = $request->user();
 
-        $teamMembers = User::where('manager_id', $user->id)->pluck('id');
+        $query = AbsenceRequest::where('organization_id', $user->organization_id);
 
-        $absences = AbsenceRequest::whereIn('user_id', $teamMembers)
+        if (!$user->hasRole('admin')) {
+            $teamMembers = User::where('manager_id', $user->id)->pluck('id');
+            $query->whereIn('user_id', $teamMembers);
+        }
+
+        $absences = $query
             ->when($request->get('status'), fn($q, $s) => $q->where('status', $s))
             ->with(['user', 'absenceType'])
             ->latest()
