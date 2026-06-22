@@ -77,6 +77,10 @@ class TimeTrackingController extends Controller
 
     public function clockOut(Request $request)
     {
+        $request->validate([
+            'break_minutes' => 'nullable|integer|min:0',
+        ]);
+
         $user = $request->user();
         $entry = TimeEntry::where('user_id', $user->id)
             ->where('date', today())
@@ -85,15 +89,74 @@ class TimeTrackingController extends Controller
         if ($entry) {
             $startTime = \Carbon\Carbon::parse($entry->start_time);
             $endTime = now();
-            $totalMinutes = $startTime->diffInMinutes($endTime) - ($entry->break_minutes ?? 0);
+            $breakMinutes = $request->input('break_minutes', 0);
+            $totalMinutes = $startTime->diffInMinutes($endTime) - $breakMinutes;
 
             $entry->update([
                 'end_time' => $endTime->format('H:i'),
+                'break_minutes' => $breakMinutes,
                 'total_minutes' => max(0, $totalMinutes),
             ]);
         }
 
         return redirect()->route('time-tracking.index')
             ->with('success', __('app.clock_out') . ' - ' . now()->format('H:i'));
+    }
+
+    public function edit(Request $request, TimeEntry $time_tracking)
+    {
+        $user = $request->user();
+        if ($time_tracking->user_id !== $user->id) {
+            abort(403);
+        }
+
+        $entries = TimeEntry::where('user_id', $user->id)
+            ->orderByDesc('date')
+            ->paginate(15);
+
+        $todayEntry = TimeEntry::where('user_id', $user->id)
+            ->where('date', today())
+            ->first();
+
+        return view('time-tracking.index', compact('entries', 'todayEntry'))
+            ->with('editEntry', $time_tracking);
+    }
+
+    public function update(Request $request, TimeEntry $time_tracking)
+    {
+        $user = $request->user();
+        if ($time_tracking->user_id !== $user->id) {
+            abort(403);
+        }
+
+        if ($time_tracking->status === 'approved') {
+            return redirect()->route('time-tracking.index')
+                ->with('error', __('app.error'));
+        }
+
+        $validated = $request->validate([
+            'start_time' => 'required',
+            'end_time' => 'required|after:start_time',
+            'break_minutes' => 'nullable|integer|min:0',
+            'project' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $startTime = \Carbon\Carbon::parse($validated['start_time']);
+        $endTime = \Carbon\Carbon::parse($validated['end_time']);
+        $breakMinutes = $validated['break_minutes'] ?? 0;
+        $totalMinutes = $startTime->diffInMinutes($endTime) - $breakMinutes;
+
+        $time_tracking->update([
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'break_minutes' => $breakMinutes,
+            'total_minutes' => max(0, $totalMinutes),
+            'project' => $validated['project'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return redirect()->route('time-tracking.index')
+            ->with('success', __('app.success'));
     }
 }

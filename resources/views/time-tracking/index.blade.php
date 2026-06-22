@@ -74,15 +74,37 @@
                     </button>
                 </form>
                 @elseif(!$todayEntry->end_time)
-                <form action="{{ route('time-tracking.clock-out') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center gap-x-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-red-500 transition-colors">
+                <div x-data="{ showBreakPrompt: false }">
+                    <button @click="showBreakPrompt = true" type="button" class="inline-flex items-center gap-x-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-red-500 transition-colors">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
                         </svg>
                         {{ __('app.clock_out') }}
                     </button>
-                </form>
+
+                    {{-- Break Minutes Modal --}}
+                    <div x-show="showBreakPrompt" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50" @keydown.escape.window="showBreakPrompt = false">
+                        <div class="rounded-xl bg-white shadow-xl ring-1 ring-gray-900/5 p-6 w-full max-w-sm mx-4" @click.outside="showBreakPrompt = false">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ __('app.clock_out') }}</h3>
+                            <p class="text-sm text-gray-500 mb-4">{{ app()->getLocale() === 'de' ? 'Wie viele Minuten Pause hatten Sie?' : 'How many minutes of break did you take?' }}</p>
+                            <form action="{{ route('time-tracking.clock-out') }}" method="POST">
+                                @csrf
+                                <div class="mb-4">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('app.break') }} (min)</label>
+                                    <input type="number" name="break_minutes" value="30" min="0" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm" autofocus>
+                                </div>
+                                <div class="flex gap-3 justify-end">
+                                    <button type="button" @click="showBreakPrompt = false" class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
+                                        {{ __('app.cancel') }}
+                                    </button>
+                                    <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 transition-colors">
+                                        {{ __('app.clock_out') }}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
                 @else
                 <span class="inline-flex items-center rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600">
                     {{ $todayEntry->start_time }} - {{ $todayEntry->end_time }}
@@ -175,6 +197,7 @@
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.total_hours') }}</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.project') }}</th>
                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ __('app.status') }}</th>
+                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{{ __('app.actions') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -194,10 +217,17 @@
                             {{ __('app.' . $entry->status) }}
                         </span>
                     </td>
+                    <td class="px-6 py-3 text-right">
+                        @if($entry->status !== 'approved')
+                        <a href="{{ route('time-tracking.edit', $entry) }}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">
+                            {{ __('app.edit') }}
+                        </a>
+                        @endif
+                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500">{{ __('app.no_data') }}</td>
+                    <td colspan="8" class="px-6 py-12 text-center text-sm text-gray-500">{{ __('app.no_data') }}</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -208,5 +238,49 @@
         </div>
         @endif
     </div>
+
+    {{-- Edit Entry Modal --}}
+    @if(isset($editEntry))
+    <div x-data="{ open: true }" x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50" @keydown.escape.window="open = false; window.location = '{{ route('time-tracking.index') }}'">
+        <div class="rounded-xl bg-white shadow-xl ring-1 ring-gray-900/5 p-6 w-full max-w-lg mx-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">{{ __('app.edit') }} — {{ $editEntry->date->format('d.m.Y') }}</h3>
+            <p class="text-sm text-gray-500 mb-4">{{ app()->getLocale() === 'de' ? 'Zeiten und Pause anpassen' : 'Adjust times and break' }}</p>
+            <form action="{{ route('time-tracking.update', $editEntry) }}" method="POST" class="space-y-4">
+                @csrf
+                @method('PUT')
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('app.start_time') }}</label>
+                        <input type="time" name="start_time" value="{{ $editEntry->start_time }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('app.end_time') }}</label>
+                        <input type="time" name="end_time" value="{{ $editEntry->end_time }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('app.break') }} (min)</label>
+                    <input type="number" name="break_minutes" value="{{ $editEntry->break_minutes }}" min="0" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('app.project') }}</label>
+                    <input type="text" name="project" value="{{ $editEntry->project }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">{{ __('app.notes') }}</label>
+                    <input type="text" name="notes" value="{{ $editEntry->notes }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                </div>
+                <div class="flex gap-3 justify-end pt-2">
+                    <a href="{{ route('time-tracking.index') }}" class="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
+                        {{ __('app.cancel') }}
+                    </a>
+                    <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-colors">
+                        {{ __('app.save') }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 </div>
 @endsection
