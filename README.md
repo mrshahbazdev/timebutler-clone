@@ -1,4 +1,4 @@
-# TimeButler - Employee Vacation & Absence Management
+# TimeCheck - Employee Vacation & Absence Management
 
 A comprehensive vacation and absence planner built with Laravel. Supports German holidays, school breaks by Bundesland, team calendars, PDF/Excel exports, and full DE/EN bilingual UI.
 
