@@ -17,6 +17,14 @@ class SetLocale
             App::setLocale($locale);
         }
 
+        if ($user = auth()->user()) {
+            $timezone = $user->organization?->timezone;
+            if ($timezone && in_array($timezone, timezone_identifiers_list())) {
+                config(['app.timezone' => $timezone]);
+                date_default_timezone_set($timezone);
+            }
+        }
+
         return $next($request);
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TeamCalendarController;
 use App\Http\Controllers\TimeTrackingController;
 use Illuminate\Support\Facades\Route;
@@ -77,9 +78,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports/time-tracking/excel', [ReportController::class, 'timeTrackingExcel'])->name('reports.time-tracking.excel');
 
     // Settings
-    Route::get('/settings', function () {
-        return view('settings.index');
-    })->name('settings');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
