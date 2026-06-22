@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{{ app()->getLocale() === 'de' ? 'TimeButler - Urlaubsverwaltung und Abwesenheitsmanagement für Unternehmen. Deutsche Feiertage, Teamkalender, Genehmigungsworkflow.' : 'TimeButler - Vacation and absence management for businesses. German holidays, team calendar, approval workflow.' }}">
-    <title>TimeButler - {{ app()->getLocale() === 'de' ? 'Urlaubsverwaltung leicht gemacht' : 'Vacation Management Made Simple' }}</title>
+    <meta name="description" content="{{ app()->getLocale() === 'de' ? 'TimeCheck - Urlaubsverwaltung und Abwesenheitsmanagement für Unternehmen. Deutsche Feiertage, Teamkalender, Genehmigungsworkflow.' : 'TimeCheck - Vacation and absence management for businesses. German holidays, team calendar, approval workflow.' }}">
+    <title>TimeCheck - {{ app()->getLocale() === 'de' ? 'Urlaubsverwaltung leicht gemacht' : 'Vacation Management Made Simple' }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700,800,900&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -72,7 +72,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <span class="text-xl font-bold" :class="scrolled ? 'text-gray-900' : 'text-white'">TimeButler</span>
+                    <span class="text-xl font-bold" :class="scrolled ? 'text-gray-900' : 'text-white'">TimeCheck</span>
                 </a>
 
                 {{-- Desktop nav --}}
@@ -611,8 +611,8 @@
                     </div>
                     <p class="text-sm text-gray-600 leading-relaxed">
                         {{ app()->getLocale() === 'de'
-                            ? '"TimeButler hat unsere Urlaubsplanung komplett vereinfacht. Die automatische Feiertags-Integration für NRW spart uns enorm viel Zeit."'
-                            : '"TimeButler completely simplified our vacation planning. The automatic holiday integration for NRW saves us a lot of time."' }}
+                            ? '"TimeCheck hat unsere Urlaubsplanung komplett vereinfacht. Die automatische Feiertags-Integration für NRW spart uns enorm viel Zeit."'
+                            : '"TimeCheck completely simplified our vacation planning. The automatic holiday integration for NRW saves us a lot of time."' }}
                     </p>
                     <div class="mt-5 flex items-center gap-3">
                         <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">MS</div>
@@ -752,7 +752,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
-                        <span class="text-lg font-bold text-white">TimeButler</span>
+                        <span class="text-lg font-bold text-white">TimeCheck</span>
                     </div>
                     <p class="text-sm leading-relaxed">
                         {{ app()->getLocale() === 'de'
@@ -799,7 +799,7 @@
             </div>
 
             <div class="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-sm">&copy; {{ date('Y') }} TimeButler. {{ app()->getLocale() === 'de' ? 'Alle Rechte vorbehalten.' : 'All rights reserved.' }}</p>
+                <p class="text-sm">&copy; {{ date('Y') }} TimeCheck. {{ app()->getLocale() === 'de' ? 'Alle Rechte vorbehalten.' : 'All rights reserved.' }}</p>
                 <p class="text-sm">{{ app()->getLocale() === 'de' ? 'Mit Liebe in Deutschland entwickelt' : 'Made with care in Germany' }}</p>
             </div>
         </div>
