@@ -52,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar');
     Route::get('/calendar/team', [TeamCalendarController::class, 'index'])->name('calendar.team');
     Route::get('/calendar/team/year', [TeamCalendarController::class, 'yearOverview'])->name('calendar.team.year');
+    Route::get('/calendar/team/year/pdf', [TeamCalendarController::class, 'yearPdf'])->name('calendar.team.year.pdf');
     Route::get('/calendar/team/pdf', [TeamCalendarController::class, 'pdf'])->name('calendar.team.pdf');
 
     // Holidays
