@@ -95,6 +95,25 @@ class AbsenceController extends Controller
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = Carbon::parse($validated['end_date']);
 
+        // Check for overlapping absences (same user, non-cancelled/rejected)
+        $overlap = AbsenceRequest::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate)
+                         ->where('end_date', '>=', $endDate);
+                  });
+            })
+            ->exists();
+
+        if ($overlap) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['start_date' => __('app.absence_overlap_error')]);
+        }
+
         // Count weekdays excluding public holidays
         $holidayDates = Holiday::where('organization_id', $user->organization_id)
             ->where('type', 'public_holiday')

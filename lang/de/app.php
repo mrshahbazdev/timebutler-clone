@@ -146,6 +146,7 @@ return [
     'block_vacation_hint' => 'Geblockter Urlaub wird automatisch genehmigt. Sie können ihn später stornieren, wenn sich Pläne ändern.',
     'confirm_cancel' => 'Sind Sie sicher, dass Sie dies stornieren möchten?',
     'cannot_cancel' => 'Dieser Antrag kann nicht storniert werden',
+    'absence_overlap_error' => 'Sie haben bereits einen Abwesenheitsantrag für diesen Zeitraum. Bitte stornieren Sie den bestehenden zuerst oder wählen Sie andere Daten.',
 
     // Team Calendar
     'team_calendar' => 'Teamkalender',
