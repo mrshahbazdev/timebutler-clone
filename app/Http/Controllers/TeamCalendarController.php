@@ -123,24 +123,42 @@ class TeamCalendarController extends Controller
 
         $holidays = Holiday::where('organization_id', $user->organization_id)
             ->whereBetween('date', [$startOfYear, $endOfYear])
-            ->whereIn('type', ['public_holiday', 'school_break'])
             ->get()
             ->keyBy(fn($h) => $h->date->format('Y-m-d'));
 
-        $yearData = [];
-        foreach ($teamMembers as $member) {
-            $memberAbsences = $absences->where('user_id', $member->id);
-            $months = [];
+        // Build month-by-month data: each month has header info + per-member days
+        $monthsData = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $startOfMonth = Carbon::create($year, $m, 1);
+            $daysInMonth = $startOfMonth->daysInMonth;
 
-            for ($m = 1; $m <= 12; $m++) {
-                $startOfMonth = Carbon::create($year, $m, 1);
-                $daysInMonth = $startOfMonth->daysInMonth;
+            // Build day headers (day number, weekday name, week number, is_weekend)
+            $dayHeaders = [];
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $date = Carbon::create($year, $m, $d);
+                $dayHeaders[$d] = [
+                    'date' => $date,
+                    'weekday' => $date->locale('de')->isoFormat('dd'),
+                    'week_number' => $date->isoWeek(),
+                    'is_weekend' => $date->isWeekend(),
+                    'is_today' => $date->isToday(),
+                ];
+            }
+
+            // Build per-member day data
+            $membersData = [];
+            foreach ($teamMembers as $member) {
+                $memberAbsences = $absences->where('user_id', $member->id);
                 $days = [];
 
                 for ($d = 1; $d <= $daysInMonth; $d++) {
                     $date = Carbon::create($year, $m, $d);
                     $dateStr = $date->format('Y-m-d');
-                    $dayData = ['date' => $date, 'absence' => null, 'holiday' => null, 'is_weekend' => $date->isWeekend()];
+                    $dayData = [
+                        'absence' => null,
+                        'holiday' => null,
+                        'is_weekend' => $date->isWeekend(),
+                    ];
 
                     if (isset($holidays[$dateStr])) {
                         $dayData['holiday'] = $holidays[$dateStr];
@@ -156,18 +174,27 @@ class TeamCalendarController extends Controller
                     $days[$d] = $dayData;
                 }
 
-                $months[$m] = $days;
+                $membersData[] = [
+                    'member' => $member,
+                    'days' => $days,
+                ];
             }
 
-            $yearData[] = [
-                'member' => $member,
-                'months' => $months,
+            $monthsData[$m] = [
+                'name' => $startOfMonth->translatedFormat('F Y'),
+                'days_in_month' => $daysInMonth,
+                'day_headers' => $dayHeaders,
+                'members' => $membersData,
             ];
         }
 
         $departments = \App\Models\Department::where('organization_id', $user->organization_id)->get();
+        $absenceTypes = \App\Models\AbsenceType::where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
 
-        return view('calendar.team-year', compact('yearData', 'year', 'departments', 'departmentId'));
+        return view('calendar.team-year', compact('monthsData', 'year', 'departments', 'departmentId', 'absenceTypes'));
     }
 
     public function pdf(Request $request)

@@ -4,11 +4,15 @@
 
 @section('content')
 <div class="space-y-6">
+    {{-- Header --}}
     <div class="flex items-center justify-between flex-wrap gap-4">
         <h1 class="text-2xl font-bold text-gray-900">{{ __('app.team_calendar') }} – {{ app()->getLocale() === 'de' ? 'Jahresübersicht' : 'Annual Overview' }} {{ $year }}</h1>
         <div class="flex items-center gap-x-2">
             <a href="{{ route('calendar.team', ['month' => now()->month, 'year' => $year]) }}"
                class="inline-flex items-center gap-x-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
                 {{ app()->getLocale() === 'de' ? 'Monatsansicht' : 'Month View' }}
             </a>
         </div>
@@ -46,59 +50,94 @@
         @endforeach
     </div>
 
-    {{-- Annual Calendar per employee --}}
-    @foreach($yearData as $row)
+    {{-- Month Tables --}}
+    @foreach($monthsData as $m => $monthData)
     <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 overflow-hidden">
-        <div class="border-b border-gray-200 px-4 py-3 flex items-center gap-x-3">
-            <div class="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {{ strtoupper(substr($row['member']->name, 0, 1)) }}
-            </div>
-            <div>
-                <p class="text-sm font-semibold text-gray-900">{{ $row['member']->name }}</p>
-                @if($row['member']->department)
-                <p class="text-xs text-gray-400">{{ $row['member']->department->name }}</p>
-                @endif
-            </div>
+        <div class="border-b border-gray-200 bg-gray-50 px-4 py-3">
+            <h3 class="text-base font-bold text-gray-900">{{ $monthData['name'] }}</h3>
         </div>
         <div class="overflow-x-auto">
-            <table class="min-w-full border-collapse text-[10px]">
+            <table class="min-w-full border-collapse">
                 <thead>
-                    <tr>
-                        <th class="sticky left-0 z-10 bg-gray-50 px-2 py-1.5 text-left text-xs font-semibold text-gray-500 border-b border-r border-gray-200 min-w-[70px]">
-                            {{ app()->getLocale() === 'de' ? 'Monat' : 'Month' }}
-                        </th>
-                        @for($d = 1; $d <= 31; $d++)
-                        <th class="px-0 py-1 text-center font-medium text-gray-500 border-b border-gray-200 min-w-[18px]">{{ $d }}</th>
+                    {{-- Row 1: School breaks label + weekday names --}}
+                    <tr class="bg-gray-50">
+                        <th class="sticky left-0 z-10 bg-gray-50 px-3 py-1 text-left text-[10px] font-medium text-gray-400 border-b border-r border-gray-200 min-w-[150px]"></th>
+                        @php $prevWeek = null; @endphp
+                        @for($d = 1; $d <= $monthData['days_in_month']; $d++)
+                            @php
+                                $header = $monthData['day_headers'][$d];
+                                $currentWeek = $header['week_number'];
+                                $showWeekSep = $prevWeek !== null && $currentWeek !== $prevWeek;
+                                $prevWeek = $currentWeek;
+                            @endphp
+                            <th class="px-0 py-1 text-center text-[10px] font-medium border-b border-gray-200 min-w-[26px] {{ $header['is_weekend'] ? 'bg-gray-200 text-gray-500' : 'text-gray-500' }} {{ $showWeekSep ? 'border-l-2 border-l-gray-300' : '' }}">
+                                {{ $header['weekday'] }}
+                            </th>
+                        @endfor
+                    </tr>
+                    {{-- Row 2: Week numbers + day numbers --}}
+                    <tr class="bg-gray-50">
+                        <th class="sticky left-0 z-10 bg-gray-50 px-3 py-1 text-left text-[10px] font-medium text-gray-400 border-b border-r border-gray-200 min-w-[150px]"></th>
+                        @php $prevWeek = null; @endphp
+                        @for($d = 1; $d <= $monthData['days_in_month']; $d++)
+                            @php
+                                $header = $monthData['day_headers'][$d];
+                                $currentWeek = $header['week_number'];
+                                $showWeekSep = $prevWeek !== null && $currentWeek !== $prevWeek;
+                                $prevWeek = $currentWeek;
+                            @endphp
+                            <th class="px-0 py-1 text-center text-[11px] font-semibold border-b border-gray-200 min-w-[26px] {{ $header['is_weekend'] ? 'bg-gray-200 text-gray-500' : 'text-gray-700' }} {{ $header['is_today'] ? 'bg-blue-600 text-white' : '' }} {{ $showWeekSep ? 'border-l-2 border-l-gray-300' : '' }}">
+                                {{ $d }}
+                            </th>
                         @endfor
                     </tr>
                 </thead>
-                <tbody>
-                    @for($m = 1; $m <= 12; $m++)
-                    @php $monthName = \Carbon\Carbon::create($year, $m, 1)->translatedFormat('M'); @endphp
-                    <tr class="border-b border-gray-50">
-                        <td class="sticky left-0 z-10 bg-white px-2 py-1 text-xs font-medium text-gray-700 border-r border-gray-200">{{ $monthName }}</td>
-                        @php $daysInMonth = \Carbon\Carbon::create($year, $m, 1)->daysInMonth; @endphp
-                        @for($d = 1; $d <= 31; $d++)
-                            @if($d <= $daysInMonth)
-                                @php $dayData = $row['months'][$m][$d]; @endphp
-                                <td class="px-0 py-0.5 text-center">
-                                    @if($dayData['absence'])
-                                        <div class="h-4 w-full rounded-sm" style="background-color: {{ $dayData['absence']->absenceType->color ?? '#6b7280' }}; opacity: {{ $dayData['absence']->status === 'pending' ? '0.5' : '1' }}"
-                                             title="{{ $dayData['absence']->absenceType->name ?? '' }}"></div>
-                                    @elseif($dayData['holiday'])
-                                        <div class="h-4 w-full rounded-sm bg-red-100" title="{{ $dayData['holiday']->name_de ?? $dayData['holiday']->name }}"></div>
-                                    @elseif($dayData['is_weekend'])
-                                        <div class="h-4 w-full bg-gray-100 rounded-sm"></div>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($monthData['members'] as $memberRow)
+                    <tr class="hover:bg-gray-50/50">
+                        <td class="sticky left-0 z-10 bg-white px-3 py-1.5 border-r border-gray-200">
+                            <div class="flex items-center gap-x-2">
+                                <div class="h-6 w-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0" style="background-color: {{ $memberRow['member']->department?->color ?? '#6366f1' }}">
+                                    {{ strtoupper(substr($memberRow['member']->name, 0, 1)) }}
+                                </div>
+                                <span class="text-xs font-medium text-gray-900 truncate max-w-[120px]">{{ $memberRow['member']->name }}</span>
+                            </div>
+                        </td>
+                        @php $prevWeek = null; @endphp
+                        @for($d = 1; $d <= $monthData['days_in_month']; $d++)
+                            @php
+                                $dayData = $memberRow['days'][$d];
+                                $header = $monthData['day_headers'][$d];
+                                $currentWeek = $header['week_number'];
+                                $showWeekSep = $prevWeek !== null && $currentWeek !== $prevWeek;
+                                $prevWeek = $currentWeek;
+                            @endphp
+                            <td class="px-0 py-0.5 text-center {{ $showWeekSep ? 'border-l-2 border-l-gray-300' : '' }}">
+                                @if($dayData['absence'])
+                                    @php $absence = $dayData['absence']; @endphp
+                                    <div class="h-5 w-full flex items-center justify-center text-white text-[9px] font-bold cursor-default"
+                                         style="background-color: {{ $absence->absenceType->color ?? '#6b7280' }}; opacity: {{ $absence->status === 'pending' ? '0.6' : '1' }}"
+                                         title="{{ $absence->absenceType->name ?? '' }} ({{ $absence->status }})">
+                                        @if($absence->status === 'pending')
+                                            X
+                                        @endif
+                                    </div>
+                                @elseif($dayData['holiday'])
+                                    @php $holiday = $dayData['holiday']; @endphp
+                                    @if($holiday->type === 'public_holiday')
+                                        <div class="h-5 w-full bg-amber-100" title="{{ $holiday->name_de ?? $holiday->name }}"></div>
                                     @else
-                                        <div class="h-4 w-full"></div>
+                                        <div class="h-5 w-full bg-amber-50 border-b border-dashed border-amber-300" title="{{ $holiday->name_de ?? $holiday->name }}"></div>
                                     @endif
-                                </td>
-                            @else
-                                <td class="px-0 py-0.5 bg-gray-50"></td>
-                            @endif
+                                @elseif($dayData['is_weekend'])
+                                    <div class="h-5 w-full bg-gray-200"></div>
+                                @else
+                                    <div class="h-5 w-full"></div>
+                                @endif
+                            </td>
                         @endfor
                     </tr>
-                    @endfor
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -108,26 +147,27 @@
     {{-- Legend --}}
     <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-4">
         <h3 class="text-sm font-semibold text-gray-900 mb-3">{{ __('app.legend') }}</h3>
-        <div class="flex flex-wrap gap-4">
-            @php
-                $absenceTypes = \App\Models\AbsenceType::where('organization_id', auth()->user()->organization_id)->where('is_active', true)->orderBy('sort_order')->get();
-            @endphp
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div class="flex items-center gap-x-2">
+                <div class="h-4 w-8 bg-gray-200 border border-gray-300"></div>
+                <span class="text-xs text-gray-600">{{ app()->getLocale() === 'de' ? 'Wochenende (Sa/So)' : 'Weekend (Sat/Sun)' }}</span>
+            </div>
+            <div class="flex items-center gap-x-2">
+                <div class="h-4 w-8 bg-amber-100 border border-amber-200"></div>
+                <span class="text-xs text-gray-600">{{ __('app.public_holidays') }}</span>
+            </div>
+            <div class="flex items-center gap-x-2">
+                <div class="h-4 w-8 bg-amber-50 border-b border-dashed border-amber-300"></div>
+                <span class="text-xs text-gray-600">{{ __('app.school_breaks') }}</span>
+            </div>
             @foreach($absenceTypes as $type)
             <div class="flex items-center gap-x-2">
-                <div class="h-4 w-6 rounded-sm" style="background-color: {{ $type->color }}"></div>
+                <div class="h-4 w-8 border" style="background-color: {{ $type->color }}"></div>
                 <span class="text-xs text-gray-600">{{ $type->name }}</span>
             </div>
             @endforeach
             <div class="flex items-center gap-x-2">
-                <div class="h-4 w-6 rounded-sm bg-red-100 border border-red-200"></div>
-                <span class="text-xs text-gray-600">{{ __('app.public_holidays') }} / {{ __('app.school_breaks') }}</span>
-            </div>
-            <div class="flex items-center gap-x-2">
-                <div class="h-4 w-6 rounded-sm bg-gray-100 border border-gray-200"></div>
-                <span class="text-xs text-gray-600">{{ __('app.weekends') }}</span>
-            </div>
-            <div class="flex items-center gap-x-2">
-                <div class="h-4 w-6 rounded-sm bg-blue-400 opacity-60 border border-blue-300"></div>
+                <div class="h-4 w-8 bg-blue-400 opacity-60 border border-blue-300 flex items-center justify-center text-white text-[9px] font-bold">X</div>
                 <span class="text-xs text-gray-600">{{ __('app.pending') }}</span>
             </div>
         </div>
