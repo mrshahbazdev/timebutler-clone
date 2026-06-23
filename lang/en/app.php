@@ -146,6 +146,7 @@ return [
     'block_vacation_hint' => 'Blocked vacation is automatically approved. You can cancel it later if plans change.',
     'confirm_cancel' => 'Are you sure you want to cancel this?',
     'cannot_cancel' => 'This request cannot be cancelled',
+    'absence_overlap_error' => 'You already have an absence request for this period. Please cancel the existing one first or choose different dates.',
 
     // Team Calendar
     'team_calendar' => 'Team Calendar',
