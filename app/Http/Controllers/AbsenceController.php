@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\AbsenceRequest;
 use App\Models\AbsenceType;
+use App\Models\Holiday;
 use App\Models\User;
 use App\Models\VacationBalance;
 use App\Notifications\AbsenceDecisionNotification;
 use App\Notifications\AbsenceRequestNotification;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 
 class AbsenceController extends Controller
@@ -73,7 +75,26 @@ class AbsenceController extends Controller
 
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = Carbon::parse($validated['end_date']);
-        $totalDays = $startDate->diffInWeekdays($endDate) + 1;
+
+        // Count weekdays excluding public holidays
+        $holidayDates = Holiday::where('organization_id', $user->organization_id)
+            ->where('type', 'public_holiday')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->pluck('date')
+            ->map(fn($d) => $d->format('Y-m-d'))
+            ->toArray();
+
+        $totalDays = 0;
+        $period = CarbonPeriod::create($startDate, $endDate);
+        foreach ($period as $date) {
+            if ($date->isWeekend()) {
+                continue;
+            }
+            if (in_array($date->format('Y-m-d'), $holidayDates)) {
+                continue;
+            }
+            $totalDays++;
+        }
 
         if ($request->boolean('half_day_start')) {
             $totalDays -= 0.5;

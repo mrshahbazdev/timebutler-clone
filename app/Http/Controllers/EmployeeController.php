@@ -174,6 +174,28 @@ class EmployeeController extends Controller
         $employee->update($updateData);
         $employee->syncRoles([$validated['role']]);
 
+        // Sync VacationBalance total_days when vacation_days_per_year changes
+        $vacationBalance = VacationBalance::where('user_id', $employee->id)
+            ->where('year', now()->year)
+            ->first();
+
+        if ($vacationBalance) {
+            $diff = $validated['vacation_days_per_year'] - $vacationBalance->total_days;
+            $vacationBalance->update([
+                'total_days' => $validated['vacation_days_per_year'],
+                'remaining_days' => max(0, $vacationBalance->remaining_days + $diff),
+            ]);
+        } else {
+            VacationBalance::create([
+                'user_id' => $employee->id,
+                'organization_id' => $employee->organization_id,
+                'year' => now()->year,
+                'total_days' => $validated['vacation_days_per_year'],
+                'used_days' => 0,
+                'remaining_days' => $validated['vacation_days_per_year'],
+            ]);
+        }
+
         return redirect()->route('employees.index')
             ->with('success', __('app.success'));
     }

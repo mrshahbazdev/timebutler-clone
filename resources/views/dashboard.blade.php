@@ -33,7 +33,7 @@
                 <div>
                     <p class="text-sm font-medium text-gray-500">{{ __('app.my_vacation_balance') }}</p>
                     <p class="mt-1 text-2xl font-bold text-gray-900">
-                        {{ $vacationBalance ? $vacationBalance->remaining_days : 30 }}
+                        {{ $vacationBalance ? $vacationBalance->remaining_days : auth()->user()->vacation_days_per_year }}
                         <span class="text-sm font-normal text-gray-500">{{ __('app.days') }}</span>
                     </p>
                 </div>
@@ -41,7 +41,7 @@
             <div class="mt-4">
                 <div class="flex justify-between text-xs text-gray-500 mb-1">
                     <span>{{ $vacationBalance ? $vacationBalance->used_days : 0 }} {{ __('app.days') }} used</span>
-                    <span>{{ $vacationBalance ? $vacationBalance->total_days : 30 }} total</span>
+                    <span>{{ $vacationBalance ? $vacationBalance->total_days : auth()->user()->vacation_days_per_year }} total</span>
                 </div>
                 <div class="h-2 w-full rounded-full bg-gray-100">
                     @php $usedPercent = $vacationBalance ? ($vacationBalance->used_days / max($vacationBalance->total_days, 1)) * 100 : 0; @endphp

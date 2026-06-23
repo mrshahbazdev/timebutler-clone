@@ -7,6 +7,13 @@
     <div class="flex items-center justify-between flex-wrap gap-4">
         <h1 class="text-2xl font-bold text-gray-900">{{ __('app.team_calendar') }}</h1>
         <div class="flex items-center gap-x-2">
+            <a href="{{ route('calendar.team.year', ['year' => $year, 'department_id' => $departmentId]) }}"
+               class="inline-flex items-center gap-x-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                </svg>
+                {{ app()->getLocale() === 'de' ? 'Jahresübersicht' : 'Annual Overview' }}
+            </a>
             <a href="{{ route('calendar.team.pdf', ['month' => $month, 'year' => $year, 'department_id' => $departmentId]) }}"
                class="inline-flex items-center gap-x-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
