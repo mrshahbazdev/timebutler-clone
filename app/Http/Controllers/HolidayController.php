@@ -31,6 +31,10 @@ class HolidayController extends Controller
 
     public function import(Request $request)
     {
+        if (!$request->user()->hasRole('admin')) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'year' => 'required|integer|min:2024|max:2030',
             'state' => 'required|string|in:' . implode(',', array_keys(GermanHolidayService::FEDERAL_STATES)),
@@ -66,6 +70,11 @@ class HolidayController extends Controller
     public function destroy(Request $request)
     {
         $user = $request->user();
+
+        if (!$user->hasRole('admin')) {
+            abort(403);
+        }
+
         $year = $request->get('year', now()->year);
 
         Holiday::where('organization_id', $user->organization_id)

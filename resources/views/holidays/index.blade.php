@@ -8,7 +8,8 @@
         <h1 class="text-2xl font-bold text-gray-900">{{ __('app.holidays') }} & {{ __('app.school_breaks') }}</h1>
     </div>
 
-    {{-- Import Form --}}
+    {{-- Import Form (Admin only) --}}
+    @if(auth()->user()->hasRole('admin'))
     <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-6">
         <h2 class="text-base font-semibold text-gray-900 mb-4">{{ __('app.import_calendar') }}</h2>
         <form action="{{ route('holidays.import') }}" method="POST" class="space-y-4">
@@ -64,6 +65,7 @@
             </p>
         </form>
     </div>
+    @endif
 
     {{-- Year Filter --}}
     <div class="flex items-center gap-x-2">
@@ -140,7 +142,8 @@
     </div>
     @endif
 
-    {{-- Delete All --}}
+    {{-- Delete All (Admin only) --}}
+    @if(auth()->user()->hasRole('admin'))
     <div class="flex justify-end">
         <form action="{{ route('holidays.destroy') }}" method="POST" onsubmit="return confirm('{{ __('app.confirm_delete') }}')">
             @csrf
@@ -154,6 +157,7 @@
             </button>
         </form>
     </div>
+    @endif
     @endif
 </div>
 @endsection

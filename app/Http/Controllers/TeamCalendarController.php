@@ -89,6 +89,87 @@ class TeamCalendarController extends Controller
         ));
     }
 
+    public function yearOverview(Request $request)
+    {
+        $user = $request->user();
+        $year = (int) $request->get('year', now()->year);
+        $departmentId = $request->get('department_id');
+
+        $startOfYear = Carbon::create($year, 1, 1);
+        $endOfYear = Carbon::create($year, 12, 31);
+
+        $teamQuery = User::where('organization_id', $user->organization_id)
+            ->where('is_active', true);
+
+        if ($departmentId) {
+            $teamQuery->where('department_id', $departmentId);
+        }
+
+        $teamMembers = $teamQuery->with('department')->orderBy('name')->get();
+
+        $absences = AbsenceRequest::where('organization_id', $user->organization_id)
+            ->whereIn('user_id', $teamMembers->pluck('id'))
+            ->where(function ($q) use ($startOfYear, $endOfYear) {
+                $q->whereBetween('start_date', [$startOfYear, $endOfYear])
+                  ->orWhereBetween('end_date', [$startOfYear, $endOfYear])
+                  ->orWhere(function ($q2) use ($startOfYear, $endOfYear) {
+                      $q2->where('start_date', '<=', $startOfYear)
+                         ->where('end_date', '>=', $endOfYear);
+                  });
+            })
+            ->whereIn('status', ['approved', 'pending'])
+            ->with('absenceType')
+            ->get();
+
+        $holidays = Holiday::where('organization_id', $user->organization_id)
+            ->whereBetween('date', [$startOfYear, $endOfYear])
+            ->whereIn('type', ['public_holiday', 'school_break'])
+            ->get()
+            ->keyBy(fn($h) => $h->date->format('Y-m-d'));
+
+        $yearData = [];
+        foreach ($teamMembers as $member) {
+            $memberAbsences = $absences->where('user_id', $member->id);
+            $months = [];
+
+            for ($m = 1; $m <= 12; $m++) {
+                $startOfMonth = Carbon::create($year, $m, 1);
+                $daysInMonth = $startOfMonth->daysInMonth;
+                $days = [];
+
+                for ($d = 1; $d <= $daysInMonth; $d++) {
+                    $date = Carbon::create($year, $m, $d);
+                    $dateStr = $date->format('Y-m-d');
+                    $dayData = ['date' => $date, 'absence' => null, 'holiday' => null, 'is_weekend' => $date->isWeekend()];
+
+                    if (isset($holidays[$dateStr])) {
+                        $dayData['holiday'] = $holidays[$dateStr];
+                    }
+
+                    foreach ($memberAbsences as $absence) {
+                        if ($date->between($absence->start_date, $absence->end_date)) {
+                            $dayData['absence'] = $absence;
+                            break;
+                        }
+                    }
+
+                    $days[$d] = $dayData;
+                }
+
+                $months[$m] = $days;
+            }
+
+            $yearData[] = [
+                'member' => $member,
+                'months' => $months,
+            ];
+        }
+
+        $departments = \App\Models\Department::where('organization_id', $user->organization_id)->get();
+
+        return view('calendar.team-year', compact('yearData', 'year', 'departments', 'departmentId'));
+    }
+
     public function pdf(Request $request)
     {
         $user = $request->user();
