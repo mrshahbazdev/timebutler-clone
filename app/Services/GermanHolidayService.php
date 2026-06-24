@@ -56,6 +56,12 @@ class GermanHolidayService
 
     public function importSchoolBreaks(int $organizationId, string $state, int $year): int
     {
+        Holiday::where('organization_id', $organizationId)
+            ->where('type', 'school_break')
+            ->where('federal_state', $state)
+            ->where('year', $year)
+            ->delete();
+
         $breaks = $this->fetchSchoolBreaks($state, $year);
         $count = 0;
 
