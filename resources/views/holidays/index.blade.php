@@ -61,7 +61,7 @@
 
             <p class="text-xs text-gray-500">
                 {{ __('app.school_breaks_source') }}:
-                <a href="https://www.schulferien.org" target="_blank" class="text-blue-600 hover:underline">schulferien.org</a>
+                <a href="https://ferien-api.de" target="_blank" class="text-blue-600 hover:underline">ferien-api.de</a>
             </p>
         </form>
     </div>
