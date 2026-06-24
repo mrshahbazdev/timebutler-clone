@@ -77,6 +77,7 @@
                             {{ __('app.team_calendar') }}
                         </a>
                     </li>
+                    @if(auth()->user()->hasRole('admin'))
                     <li>
                         <a href="{{ route('holidays.index') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -87,6 +88,7 @@
                             {{ __('app.holidays') }}
                         </a>
                     </li>
+                    @endif
                 </ul>
             </li>
 

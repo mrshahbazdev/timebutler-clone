@@ -15,6 +15,11 @@ class HolidayController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
+        if (!$user->hasRole('admin')) {
+            abort(403);
+        }
+
         $year = (int) $request->get('year', now()->year);
         $state = $request->get('state', $user->organization->federal_state ?? 'NW');
 
