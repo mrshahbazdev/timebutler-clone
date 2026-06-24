@@ -29,25 +29,6 @@ class GermanHolidayService
         'TH' => 'Thüringen',
     ];
 
-    public const STATE_URL_NAMES = [
-        'BW' => 'Baden-Wuerttemberg',
-        'BY' => 'Bayern',
-        'BE' => 'Berlin',
-        'BB' => 'Brandenburg',
-        'HB' => 'Bremen',
-        'HH' => 'Hamburg',
-        'HE' => 'Hessen',
-        'MV' => 'Mecklenburg-Vorpommern',
-        'NI' => 'Niedersachsen',
-        'NW' => 'Nordrhein-Westfalen',
-        'RP' => 'Rheinland-Pfalz',
-        'SL' => 'Saarland',
-        'SN' => 'Sachsen',
-        'ST' => 'Sachsen-Anhalt',
-        'SH' => 'Schleswig-Holstein',
-        'TH' => 'Thueringen',
-    ];
-
     public function importPublicHolidays(int $organizationId, string $state, int $year): int
     {
         $holidays = $this->getPublicHolidays($state, $year);
@@ -205,98 +186,101 @@ class GermanHolidayService
         return $holidays;
     }
 
+    private const FERIEN_NAME_MAP = [
+        'winterferien' => ['name' => 'Winter Break', 'name_de' => 'Winterferien'],
+        'osterferien' => ['name' => 'Easter Break', 'name_de' => 'Osterferien'],
+        'pfingstferien' => ['name' => 'Whitsun Break', 'name_de' => 'Pfingstferien'],
+        'sommerferien' => ['name' => 'Summer Break', 'name_de' => 'Sommerferien'],
+        'herbstferien' => ['name' => 'Autumn Break', 'name_de' => 'Herbstferien'],
+        'weihnachtsferien' => ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien'],
+    ];
+
     public function fetchSchoolBreaks(string $state, int $year): array
     {
-        $stateName = self::STATE_URL_NAMES[$state] ?? $state;
-        $url = "https://www.schulferien.org/Kalender_mit_Ferien/kalender_{$year}_ferien_{$stateName}.html";
+        $url = "https://ferien-api.de/api/v1/holidays/{$state}/{$year}";
 
         try {
             $response = Http::timeout(15)->get($url);
 
             if (!$response->successful()) {
-                Log::warning("Failed to fetch school breaks from {$url}: {$response->status()}");
+                Log::warning("Failed to fetch school breaks from ferien-api.de: {$response->status()}");
                 return $this->getFallbackSchoolBreaks($state, $year);
             }
 
-            $html = $response->body();
-            return $this->parseSchoolBreaks($html, $year);
+            $data = $response->json();
+
+            if (!is_array($data) || empty($data)) {
+                Log::warning('ferien-api.de returned empty or invalid data');
+                return $this->getFallbackSchoolBreaks($state, $year);
+            }
+
+            return $this->mapFerienApiResponse($data);
         } catch (\Exception $e) {
             Log::warning("Error fetching school breaks: {$e->getMessage()}");
             return $this->getFallbackSchoolBreaks($state, $year);
         }
     }
 
-    private function parseSchoolBreaks(string $html, int $year): array
+    private function mapFerienApiResponse(array $data): array
     {
         $breaks = [];
 
-        $ferienTypes = [
-            'Winterferien' => 'Winter Break',
-            'Osterferien' => 'Easter Break',
-            'Pfingstferien' => 'Whitsun Break',
-            'Sommerferien' => 'Summer Break',
-            'Herbstferien' => 'Autumn Break',
-            'Weihnachtsferien' => 'Christmas Break',
-        ];
+        foreach ($data as $entry) {
+            $slug = strtolower($entry['name'] ?? '');
+            $matched = null;
 
-        foreach ($ferienTypes as $nameDe => $nameEn) {
-            $pattern = '/' . preg_quote($nameDe, '/') . '.*?(\d{1,2}\.\d{1,2}\.(?:\d{2,4})?)\s*[-–]\s*(\d{1,2}\.\d{1,2}\.(?:\d{2,4})?)/s';
-            if (preg_match($pattern, $html, $matches)) {
-                $startStr = $matches[1];
-                $endStr = $matches[2];
-
-                $start = $this->parseDateString($startStr, $year);
-                $end = $this->parseDateString($endStr, $year);
-
-                if ($start && $end && $start->lte($end)) {
-                    $breaks[] = [
-                        'name' => $nameEn,
-                        'name_de' => $nameDe,
-                        'start' => $start->format('Y-m-d'),
-                        'end' => $end->format('Y-m-d'),
-                    ];
+            foreach (self::FERIEN_NAME_MAP as $keyword => $names) {
+                if (str_contains($slug, $keyword)) {
+                    $matched = $names;
+                    break;
                 }
             }
-        }
 
-        if (empty($breaks)) {
-            return $this->getFallbackSchoolBreaks('NW', $year);
+            if (!$matched) {
+                continue;
+            }
+
+            $breaks[] = [
+                'name' => $matched['name'],
+                'name_de' => $matched['name_de'],
+                'start' => $entry['start'],
+                'end' => $entry['end'],
+            ];
         }
 
         return $breaks;
     }
 
-    private function parseDateString(string $dateStr, int $defaultYear): ?Carbon
-    {
-        $dateStr = trim($dateStr, '. ');
-        $parts = explode('.', $dateStr);
-
-        if (count($parts) === 2) {
-            return Carbon::create($defaultYear, (int) $parts[1], (int) $parts[0]);
-        } elseif (count($parts) === 3) {
-            $yearPart = (int) $parts[2];
-            if ($yearPart < 100) {
-                $yearPart += 2000;
-            }
-            return Carbon::create($yearPart, (int) $parts[1], (int) $parts[0]);
-        }
-
-        return null;
-    }
-
     private function getFallbackSchoolBreaks(string $state, int $year): array
     {
-        return [
-            ['name' => 'Easter Break', 'name_de' => 'Osterferien', 'start' => "{$year}-04-07", 'end' => "{$year}-04-21"],
-            ['name' => 'Summer Break', 'name_de' => 'Sommerferien', 'start' => "{$year}-07-07", 'end' => "{$year}-08-19"],
+        $fallbacks = [
+            'NW' => [
+                ['name' => 'Easter Break', 'name_de' => 'Osterferien', 'start' => "{$year}-03-30", 'end' => "{$year}-04-12"],
+                ['name' => 'Summer Break', 'name_de' => 'Sommerferien', 'start' => "{$year}-07-20", 'end' => "{$year}-09-01"],
+                ['name' => 'Autumn Break', 'name_de' => 'Herbstferien', 'start' => "{$year}-10-19", 'end' => "{$year}-10-31"],
+                ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-23", 'end' => "{$year}-01-06"],
+            ],
+            'BY' => [
+                ['name' => 'Easter Break', 'name_de' => 'Osterferien', 'start' => "{$year}-04-06", 'end' => "{$year}-04-18"],
+                ['name' => 'Whitsun Break', 'name_de' => 'Pfingstferien', 'start' => "{$year}-05-26", 'end' => "{$year}-06-05"],
+                ['name' => 'Summer Break', 'name_de' => 'Sommerferien', 'start' => "{$year}-07-30", 'end' => "{$year}-09-09"],
+                ['name' => 'Autumn Break', 'name_de' => 'Herbstferien', 'start' => "{$year}-10-31", 'end' => "{$year}-11-06"],
+                ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-23", 'end' => "{$year}-01-05"],
+            ],
+        ];
+
+        $default = [
+            ['name' => 'Easter Break', 'name_de' => 'Osterferien', 'start' => "{$year}-04-06", 'end' => "{$year}-04-18"],
+            ['name' => 'Summer Break', 'name_de' => 'Sommerferien', 'start' => "{$year}-07-20", 'end' => "{$year}-09-01"],
             ['name' => 'Autumn Break', 'name_de' => 'Herbstferien', 'start' => "{$year}-10-13", 'end' => "{$year}-10-25"],
             ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-22", 'end' => "{$year}-12-31"],
         ];
+
+        return $fallbacks[$state] ?? $default;
     }
 
     public function getSchulferienUrl(string $state, int $year): string
     {
-        $stateName = self::STATE_URL_NAMES[$state] ?? $state;
-        return "https://www.schulferien.org/Kalender_mit_Ferien/kalender_{$year}_ferien_{$stateName}.html";
+        return "https://ferien-api.de/api/v1/holidays/{$state}/{$year}";
     }
 }
