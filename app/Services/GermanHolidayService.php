@@ -38,7 +38,7 @@ class GermanHolidayService
             Holiday::updateOrCreate(
                 [
                     'organization_id' => $organizationId,
-                    'date' => $holiday['date'],
+                    'date' => $holiday['date'] instanceof \Carbon\Carbon ? $holiday['date']->format('Y-m-d') : Carbon::parse($holiday['date'])->format('Y-m-d'),
                     'type' => 'public_holiday',
                     'federal_state' => $state,
                 ],
@@ -259,19 +259,20 @@ class GermanHolidayService
 
     private function getFallbackSchoolBreaks(string $state, int $year): array
     {
+        $nextYear = $year + 1;
         $fallbacks = [
             'NW' => [
                 ['name' => 'Easter Break', 'name_de' => 'Osterferien', 'start' => "{$year}-03-30", 'end' => "{$year}-04-12"],
                 ['name' => 'Summer Break', 'name_de' => 'Sommerferien', 'start' => "{$year}-07-20", 'end' => "{$year}-09-01"],
                 ['name' => 'Autumn Break', 'name_de' => 'Herbstferien', 'start' => "{$year}-10-19", 'end' => "{$year}-10-31"],
-                ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-23", 'end' => "{$year}-01-06"],
+                ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-23", 'end' => "{$nextYear}-01-06"],
             ],
             'BY' => [
                 ['name' => 'Easter Break', 'name_de' => 'Osterferien', 'start' => "{$year}-04-06", 'end' => "{$year}-04-18"],
                 ['name' => 'Whitsun Break', 'name_de' => 'Pfingstferien', 'start' => "{$year}-05-26", 'end' => "{$year}-06-05"],
                 ['name' => 'Summer Break', 'name_de' => 'Sommerferien', 'start' => "{$year}-07-30", 'end' => "{$year}-09-09"],
                 ['name' => 'Autumn Break', 'name_de' => 'Herbstferien', 'start' => "{$year}-10-31", 'end' => "{$year}-11-06"],
-                ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-23", 'end' => "{$year}-01-05"],
+                ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-23", 'end' => "{$nextYear}-01-05"],
             ],
         ];
 
@@ -279,7 +280,7 @@ class GermanHolidayService
             ['name' => 'Easter Break', 'name_de' => 'Osterferien', 'start' => "{$year}-04-06", 'end' => "{$year}-04-18"],
             ['name' => 'Summer Break', 'name_de' => 'Sommerferien', 'start' => "{$year}-07-20", 'end' => "{$year}-09-01"],
             ['name' => 'Autumn Break', 'name_de' => 'Herbstferien', 'start' => "{$year}-10-13", 'end' => "{$year}-10-25"],
-            ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-22", 'end' => "{$year}-12-31"],
+            ['name' => 'Christmas Break', 'name_de' => 'Weihnachtsferien', 'start' => "{$year}-12-22", 'end' => "{$nextYear}-01-05"],
         ];
 
         return $fallbacks[$state] ?? $default;
