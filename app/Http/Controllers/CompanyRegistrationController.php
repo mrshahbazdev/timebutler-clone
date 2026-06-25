@@ -56,6 +56,8 @@ class CompanyRegistrationController extends Controller
             'employment_start' => now(),
         ]);
 
+        \Illuminate\Support\Facades\Artisan::call('permissions:sync');
+
         $user->assignRole('admin');
 
         VacationBalance::create([
