@@ -50,30 +50,39 @@ class TeamCalendarController extends Controller
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->whereIn('type', ['public_holiday', 'school_break'])
             ->get()
-            ->keyBy(fn($h) => $h->date->format('Y-m-d'));
+            ->groupBy(fn($h) => $h->date->format('Y-m-d'));
+
+        $absenceMap = [];
+        foreach ($absences as $absence) {
+            $start = Carbon::parse($absence->start_date)->startOfDay();
+            $end = Carbon::parse($absence->end_date)->endOfDay();
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                $absenceMap[$absence->user_id][$date->format('Y-m-d')] = $absence;
+            }
+        }
+
+        $monthDays = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $date = Carbon::create($year, $month, $d);
+            $dateStr = $date->format('Y-m-d');
+            $monthDays[$d] = [
+                'date' => $date,
+                'dateStr' => $dateStr,
+                'is_weekend' => $date->isWeekend(),
+                'holiday' => isset($holidays[$dateStr]) ? $holidays[$dateStr]->first() : null,
+            ];
+        }
 
         $calendarData = [];
         foreach ($teamMembers as $member) {
-            $memberAbsences = $absences->where('user_id', $member->id);
             $days = [];
-
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $date = Carbon::create($year, $month, $d);
-                $dateStr = $date->format('Y-m-d');
-                $dayData = ['date' => $date, 'absence' => null, 'holiday' => null, 'is_weekend' => $date->isWeekend()];
-
-                if (isset($holidays[$dateStr])) {
-                    $dayData['holiday'] = $holidays[$dateStr];
-                }
-
-                foreach ($memberAbsences as $absence) {
-                    if ($date->between($absence->start_date, $absence->end_date)) {
-                        $dayData['absence'] = $absence;
-                        break;
-                    }
-                }
-
-                $days[$d] = $dayData;
+            foreach ($monthDays as $d => $mDay) {
+                $days[$d] = [
+                    'date' => $mDay['date'],
+                    'is_weekend' => $mDay['is_weekend'],
+                    'holiday' => $mDay['holiday'],
+                    'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
+                ];
             }
 
             $calendarData[] = [
@@ -124,7 +133,16 @@ class TeamCalendarController extends Controller
         $holidays = Holiday::where('organization_id', $user->organization_id)
             ->whereBetween('date', [$startOfYear, $endOfYear])
             ->get()
-            ->keyBy(fn($h) => $h->date->format('Y-m-d'));
+            ->groupBy(fn($h) => $h->date->format('Y-m-d'));
+
+        $absenceMap = [];
+        foreach ($absences as $absence) {
+            $start = Carbon::parse($absence->start_date)->startOfDay();
+            $end = Carbon::parse($absence->end_date)->endOfDay();
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                $absenceMap[$absence->user_id][$date->format('Y-m-d')] = $absence;
+            }
+        }
 
         // Build month-by-month data: each month has header info + per-member days
         $monthsData = [];
@@ -132,46 +150,39 @@ class TeamCalendarController extends Controller
             $startOfMonth = Carbon::create($year, $m, 1);
             $daysInMonth = $startOfMonth->daysInMonth;
 
-            // Build day headers (day number, weekday name, week number, is_weekend)
+            // Build day headers and pre-calculate month days
             $dayHeaders = [];
+            $monthDays = [];
             for ($d = 1; $d <= $daysInMonth; $d++) {
                 $date = Carbon::create($year, $m, $d);
+                $dateStr = $date->format('Y-m-d');
+                $isWeekend = $date->isWeekend();
+                
                 $dayHeaders[$d] = [
                     'date' => $date,
                     'weekday' => $date->locale('de')->isoFormat('dd'),
                     'week_number' => $date->isoWeek(),
-                    'is_weekend' => $date->isWeekend(),
+                    'is_weekend' => $isWeekend,
                     'is_today' => $date->isToday(),
+                ];
+
+                $monthDays[$d] = [
+                    'dateStr' => $dateStr,
+                    'is_weekend' => $isWeekend,
+                    'holiday' => isset($holidays[$dateStr]) ? $holidays[$dateStr]->first() : null,
                 ];
             }
 
             // Build per-member day data
             $membersData = [];
             foreach ($teamMembers as $member) {
-                $memberAbsences = $absences->where('user_id', $member->id);
                 $days = [];
-
-                for ($d = 1; $d <= $daysInMonth; $d++) {
-                    $date = Carbon::create($year, $m, $d);
-                    $dateStr = $date->format('Y-m-d');
-                    $dayData = [
-                        'absence' => null,
-                        'holiday' => null,
-                        'is_weekend' => $date->isWeekend(),
+                foreach ($monthDays as $d => $mDay) {
+                    $days[$d] = [
+                        'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
+                        'holiday' => $mDay['holiday'],
+                        'is_weekend' => $mDay['is_weekend'],
                     ];
-
-                    if (isset($holidays[$dateStr])) {
-                        $dayData['holiday'] = $holidays[$dateStr];
-                    }
-
-                    foreach ($memberAbsences as $absence) {
-                        if ($date->between($absence->start_date, $absence->end_date)) {
-                            $dayData['absence'] = $absence;
-                            break;
-                        }
-                    }
-
-                    $days[$d] = $dayData;
                 }
 
                 $membersData[] = [
@@ -228,7 +239,16 @@ class TeamCalendarController extends Controller
         $holidays = Holiday::where('organization_id', $user->organization_id)
             ->whereBetween('date', [$startOfYear, $endOfYear])
             ->get()
-            ->keyBy(fn($h) => $h->date->format('Y-m-d'));
+            ->groupBy(fn($h) => $h->date->format('Y-m-d'));
+
+        $absenceMap = [];
+        foreach ($absences as $absence) {
+            $start = Carbon::parse($absence->start_date)->startOfDay();
+            $end = Carbon::parse($absence->end_date)->endOfDay();
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                $absenceMap[$absence->user_id][$date->format('Y-m-d')] = $absence;
+            }
+        }
 
         $monthsData = [];
         for ($m = 1; $m <= 12; $m++) {
@@ -236,35 +256,36 @@ class TeamCalendarController extends Controller
             $daysInMonth = $startOfMonth->daysInMonth;
 
             $dayHeaders = [];
+            $monthDays = [];
             for ($d = 1; $d <= $daysInMonth; $d++) {
                 $date = Carbon::create($year, $m, $d);
+                $dateStr = $date->format('Y-m-d');
+                $isWeekend = $date->isWeekend();
+                
                 $dayHeaders[$d] = [
                     'date' => $date,
                     'weekday' => $date->locale('de')->isoFormat('dd'),
                     'week_number' => $date->isoWeek(),
-                    'is_weekend' => $date->isWeekend(),
+                    'is_weekend' => $isWeekend,
                     'is_today' => $date->isToday(),
+                ];
+
+                $monthDays[$d] = [
+                    'dateStr' => $dateStr,
+                    'is_weekend' => $isWeekend,
+                    'holiday' => isset($holidays[$dateStr]) ? $holidays[$dateStr]->first() : null,
                 ];
             }
 
             $membersData = [];
             foreach ($teamMembers as $member) {
-                $memberAbsences = $absences->where('user_id', $member->id);
                 $days = [];
-                for ($d = 1; $d <= $daysInMonth; $d++) {
-                    $date = Carbon::create($year, $m, $d);
-                    $dateStr = $date->format('Y-m-d');
-                    $dayData = ['absence' => null, 'holiday' => null, 'is_weekend' => $date->isWeekend()];
-                    if (isset($holidays[$dateStr])) {
-                        $dayData['holiday'] = $holidays[$dateStr];
-                    }
-                    foreach ($memberAbsences as $absence) {
-                        if ($date->between($absence->start_date, $absence->end_date)) {
-                            $dayData['absence'] = $absence;
-                            break;
-                        }
-                    }
-                    $days[$d] = $dayData;
+                foreach ($monthDays as $d => $mDay) {
+                    $days[$d] = [
+                        'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
+                        'holiday' => $mDay['holiday'],
+                        'is_weekend' => $mDay['is_weekend'],
+                    ];
                 }
                 $membersData[] = ['member' => $member, 'days' => $days];
             }
@@ -329,26 +350,39 @@ class TeamCalendarController extends Controller
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->whereIn('type', ['public_holiday', 'school_break'])
             ->get()
-            ->keyBy(fn($h) => $h->date->format('Y-m-d'));
+            ->groupBy(fn($h) => $h->date->format('Y-m-d'));
+
+        $absenceMap = [];
+        foreach ($absences as $absence) {
+            $start = Carbon::parse($absence->start_date)->startOfDay();
+            $end = Carbon::parse($absence->end_date)->endOfDay();
+            for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+                $absenceMap[$absence->user_id][$date->format('Y-m-d')] = $absence;
+            }
+        }
+
+        $monthDays = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $date = Carbon::create($year, $month, $d);
+            $dateStr = $date->format('Y-m-d');
+            $monthDays[$d] = [
+                'date' => $date,
+                'dateStr' => $dateStr,
+                'is_weekend' => $date->isWeekend(),
+                'holiday' => isset($holidays[$dateStr]) ? $holidays[$dateStr]->first() : null,
+            ];
+        }
 
         $calendarData = [];
         foreach ($teamMembers as $member) {
-            $memberAbsences = $absences->where('user_id', $member->id);
             $days = [];
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $date = Carbon::create($year, $month, $d);
-                $dateStr = $date->format('Y-m-d');
-                $dayData = ['date' => $date, 'absence' => null, 'holiday' => null, 'is_weekend' => $date->isWeekend()];
-                if (isset($holidays[$dateStr])) {
-                    $dayData['holiday'] = $holidays[$dateStr];
-                }
-                foreach ($memberAbsences as $absence) {
-                    if ($date->between($absence->start_date, $absence->end_date)) {
-                        $dayData['absence'] = $absence;
-                        break;
-                    }
-                }
-                $days[$d] = $dayData;
+            foreach ($monthDays as $d => $mDay) {
+                $days[$d] = [
+                    'date' => $mDay['date'],
+                    'is_weekend' => $mDay['is_weekend'],
+                    'holiday' => $mDay['holiday'],
+                    'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
+                ];
             }
             $calendarData[] = ['member' => $member, 'days' => $days];
         }

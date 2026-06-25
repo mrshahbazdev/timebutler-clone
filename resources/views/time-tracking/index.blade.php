@@ -17,6 +17,7 @@
         $isRunning = $todayEntry && $todayEntry->start_time && !$todayEntry->end_time;
         $dailyTarget = auth()->user()->weekly_hours / 5;
         $targetMinutes = $dailyTarget * 60;
+        $minutesAlreadyRecorded = $totalMinutesToday ?? 0;
     @endphp
     <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-6"
          @if($isRunning)
@@ -34,19 +35,20 @@
             },
             tick() {
                 this.elapsed = Math.floor((Date.now() - this.startTime.getTime()) / 1000);
-                let totalMin = Math.floor(this.elapsed / 60);
+                let currentSessionMin = Math.floor(this.elapsed / 60);
+                let totalMin = currentSessionMin + {{ $minutesAlreadyRecorded }};
                 this.hours = String(Math.floor(totalMin / 60));
                 this.minutes = String(totalMin % 60).padStart(2, '0');
                 this.seconds = String(this.elapsed % 60).padStart(2, '0');
                 this.percent = Math.min(100, (totalMin / Math.max(this.target, 1)) * 100);
             }
          }"
-         @elseif($todayEntry && $todayEntry->end_time)
+         @elseif($minutesAlreadyRecorded > 0)
          x-data="{
-            hours: '{{ intdiv($todayEntry->total_minutes ?? 0, 60) }}',
-            minutes: '{{ str_pad(($todayEntry->total_minutes ?? 0) % 60, 2, '0', STR_PAD_LEFT) }}',
+            hours: '{{ intdiv($minutesAlreadyRecorded, 60) }}',
+            minutes: '{{ str_pad($minutesAlreadyRecorded % 60, 2, '0', STR_PAD_LEFT) }}',
             seconds: '00',
-            percent: {{ min(100, (($todayEntry->total_minutes ?? 0) / max($targetMinutes, 1)) * 100) }}
+            percent: {{ min(100, ($minutesAlreadyRecorded / max($targetMinutes, 1)) * 100) }}
          }"
          @else
          x-data="{ hours: '0', minutes: '00', seconds: '00', percent: 0 }"
@@ -63,7 +65,7 @@
                 @endif
             </div>
             <div class="flex gap-3">
-                @if(!$todayEntry || !$todayEntry->start_time)
+                @if(!$isRunning)
                 <form action="{{ route('time-tracking.clock-in') }}" method="POST">
                     @csrf
                     <button type="submit" class="inline-flex items-center gap-x-2 rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-500 transition-colors">
@@ -73,7 +75,7 @@
                         {{ __('app.clock_in') }}
                     </button>
                 </form>
-                @elseif(!$todayEntry->end_time)
+                @else
                 <div x-data="{ showBreakPrompt: false }">
                     <button @click="showBreakPrompt = true" type="button" class="inline-flex items-center gap-x-2 rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-red-500 transition-colors">
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -105,10 +107,6 @@
                         </div>
                     </div>
                 </div>
-                @else
-                <span class="inline-flex items-center rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600">
-                    {{ $todayEntry->start_time }} - {{ $todayEntry->end_time }}
-                </span>
                 @endif
             </div>
         </div>
@@ -125,11 +123,11 @@
             </div>
             <p class="mt-1 text-xs text-gray-500"><span x-text="Math.round(percent)">0</span>% of daily target ({{ $dailyTarget }}h)</p>
         </div>
-        @elseif($todayEntry && $todayEntry->end_time)
+        @elseif($minutesAlreadyRecorded > 0)
         <div class="mt-4">
             <div class="flex items-center gap-x-2">
                 <span class="h-2.5 w-2.5 rounded-full bg-gray-400"></span>
-                <span class="text-sm font-medium text-gray-500">{{ app()->getLocale() === 'de' ? 'Abgeschlossen' : 'Completed' }}</span>
+                <span class="text-sm font-medium text-gray-500">{{ app()->getLocale() === 'de' ? 'Abgeschlossen' : 'Recorded Today' }}</span>
             </div>
             <div class="mt-2 h-2 w-full rounded-full bg-gray-100">
                 <div class="h-2 rounded-full bg-blue-500" :style="'width: ' + percent + '%'"></div>

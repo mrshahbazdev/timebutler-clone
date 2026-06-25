@@ -14,11 +14,15 @@ class TimeTrackingController extends Controller
             ->orderByDesc('date')
             ->paginate(15);
 
-        $todayEntry = TimeEntry::where('user_id', $user->id)
+        $todayEntries = TimeEntry::where('user_id', $user->id)
             ->where('date', today())
-            ->first();
+            ->orderByDesc('start_time')
+            ->get();
 
-        return view('time-tracking.index', compact('entries', 'todayEntry'));
+        $todayEntry = $todayEntries->firstWhere('status', 'draft') ?? $todayEntries->first();
+        $totalMinutesToday = $todayEntries->sum('total_minutes');
+
+        return view('time-tracking.index', compact('entries', 'todayEntry', 'todayEntries', 'totalMinutesToday'));
     }
 
     public function store(Request $request)
@@ -39,20 +43,19 @@ class TimeTrackingController extends Controller
         $breakMinutes = $validated['break_minutes'] ?? 0;
         $totalMinutes = $startTime->diffInMinutes($endTime) - $breakMinutes;
 
-        TimeEntry::updateOrCreate(
-            ['user_id' => $user->id, 'date' => $validated['date']],
-            [
-                'organization_id' => $user->organization_id,
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'break_minutes' => $breakMinutes,
-                'total_minutes' => max(0, $totalMinutes),
-                'project' => $validated['project'] ?? null,
-                'category' => $validated['category'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-                'status' => 'draft',
-            ]
-        );
+        TimeEntry::create([
+            'user_id' => $user->id,
+            'date' => $validated['date'],
+            'organization_id' => $user->organization_id,
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'break_minutes' => $breakMinutes,
+            'total_minutes' => max(0, $totalMinutes),
+            'project' => $validated['project'] ?? null,
+            'category' => $validated['category'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'submitted',
+        ]);
 
         return redirect()->route('time-tracking.index')
             ->with('success', __('app.success'));
@@ -62,14 +65,23 @@ class TimeTrackingController extends Controller
     {
         $user = $request->user();
 
-        TimeEntry::updateOrCreate(
-            ['user_id' => $user->id, 'date' => today()],
-            [
-                'organization_id' => $user->organization_id,
-                'start_time' => now()->format('H:i'),
-                'status' => 'draft',
-            ]
-        );
+        $existingDraft = TimeEntry::where('user_id', $user->id)
+            ->where('date', today())
+            ->where('status', 'draft')
+            ->first();
+
+        if ($existingDraft) {
+            return redirect()->route('time-tracking.index')
+                ->with('error', __('app.already_clocked_in') ?? 'Already clocked in');
+        }
+
+        TimeEntry::create([
+            'user_id' => $user->id,
+            'date' => today(),
+            'organization_id' => $user->organization_id,
+            'start_time' => now()->format('H:i'),
+            'status' => 'draft',
+        ]);
 
         return redirect()->route('time-tracking.index')
             ->with('success', __('app.clock_in') . ' - ' . now()->format('H:i'));
@@ -84,6 +96,7 @@ class TimeTrackingController extends Controller
         $user = $request->user();
         $entry = TimeEntry::where('user_id', $user->id)
             ->where('date', today())
+            ->where('status', 'draft')
             ->first();
 
         if ($entry) {
@@ -96,6 +109,7 @@ class TimeTrackingController extends Controller
                 'end_time' => $endTime->format('H:i'),
                 'break_minutes' => $breakMinutes,
                 'total_minutes' => max(0, $totalMinutes),
+                'status' => 'submitted',
             ]);
         }
 
@@ -114,11 +128,15 @@ class TimeTrackingController extends Controller
             ->orderByDesc('date')
             ->paginate(15);
 
-        $todayEntry = TimeEntry::where('user_id', $user->id)
+        $todayEntries = TimeEntry::where('user_id', $user->id)
             ->where('date', today())
-            ->first();
+            ->orderByDesc('start_time')
+            ->get();
 
-        return view('time-tracking.index', compact('entries', 'todayEntry'))
+        $todayEntry = $todayEntries->firstWhere('status', 'draft') ?? $todayEntries->first();
+        $totalMinutesToday = $todayEntries->sum('total_minutes');
+
+        return view('time-tracking.index', compact('entries', 'todayEntry', 'todayEntries', 'totalMinutesToday'))
             ->with('editEntry', $time_tracking);
     }
 

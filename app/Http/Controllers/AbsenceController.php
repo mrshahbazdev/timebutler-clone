@@ -160,6 +160,10 @@ class AbsenceController extends Controller
             'approved_at' => $requestType === 'blocked' ? now() : null,
         ]);
 
+        if ($status === 'approved') {
+            $this->updateVacationBalance($absence, $totalDays);
+        }
+
         if ($requestType === 'request' && $user->manager) {
             try {
                 $user->manager->notify(new AbsenceRequestNotification($absence));
@@ -184,6 +188,10 @@ class AbsenceController extends Controller
             return redirect()->back()->with('error', __('app.cannot_cancel'));
         }
 
+        if ($absence->status === 'approved') {
+            $this->updateVacationBalance($absence, -$absence->total_days);
+        }
+
         $absence->update(['status' => 'cancelled']);
 
         return redirect()->route('absences.index')
@@ -198,6 +206,8 @@ class AbsenceController extends Controller
             'approved_at' => now(),
         ]);
 
+        $this->updateVacationBalance($absence, $absence->total_days);
+
         try {
             $absence->user->notify(new AbsenceDecisionNotification($absence, 'approved'));
         } catch (\Exception $e) {
@@ -209,6 +219,10 @@ class AbsenceController extends Controller
 
     public function reject(Request $request, AbsenceRequest $absence)
     {
+        if ($absence->status === 'approved') {
+            $this->updateVacationBalance($absence, -$absence->total_days);
+        }
+
         $absence->update([
             'status' => 'rejected',
             'rejection_reason' => $request->input('reason'),
@@ -253,5 +267,30 @@ class AbsenceController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('absences.pdf.decision', compact('absence', 'orgName'));
 
         return $pdf->download("decision-{$absence->id}.pdf");
+    }
+
+    private function updateVacationBalance(AbsenceRequest $absence, float $days)
+    {
+        $absence->loadMissing(['absenceType', 'user']);
+        
+        if ($absence->absenceType && $absence->absenceType->deducts_vacation) {
+            $year = \Carbon\Carbon::parse($absence->start_date)->year;
+            $balance = VacationBalance::firstOrCreate(
+                [
+                    'user_id' => $absence->user_id,
+                    'year' => $year,
+                ],
+                [
+                    'organization_id' => $absence->organization_id,
+                    'total_days' => $absence->user->vacation_days_per_year ?? 0,
+                    'used_days' => 0,
+                    'remaining_days' => $absence->user->vacation_days_per_year ?? 0,
+                ]
+            );
+
+            $balance->used_days += $days;
+            $balance->remaining_days -= $days;
+            $balance->save();
+        }
     }
 }
