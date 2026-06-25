@@ -200,7 +200,7 @@ class AbsenceController extends Controller
 
         $query = AbsenceRequest::where('organization_id', $user->organization_id);
 
-        if (!$user->hasRole('admin')) {
+        if (!$user->can('view_all_absences')) {
             $teamMembers = User::where('manager_id', $user->id)->pluck('id');
             $query->whereIn('user_id', $teamMembers);
         }

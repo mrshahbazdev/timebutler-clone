@@ -16,7 +16,7 @@ class HolidayController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole('admin')) {
+        if (!$user->can('manage_holidays')) {
             abort(403);
         }
 
@@ -36,7 +36,7 @@ class HolidayController extends Controller
 
     public function import(Request $request)
     {
-        if (!$request->user()->hasRole('admin')) {
+        if (!$request->user()->can('manage_holidays')) {
             abort(403);
         }
 
@@ -76,7 +76,7 @@ class HolidayController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->hasRole('admin')) {
+        if (!$user->can('manage_holidays')) {
             abort(403);
         }
 

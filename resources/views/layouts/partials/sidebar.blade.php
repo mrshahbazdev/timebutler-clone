@@ -77,7 +77,7 @@
                             {{ __('app.team_calendar') }}
                         </a>
                     </li>
-                    @if(auth()->user()->hasRole('admin'))
+                    @can('manage_holidays')
                     <li>
                         <a href="{{ route('holidays.index') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -88,16 +88,16 @@
                             {{ __('app.holidays') }}
                         </a>
                     </li>
-                    @endif
+                    @endcan
                 </ul>
             </li>
 
             {{-- Management Section (admin/manager only) --}}
-            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
+            @canany(['manage_employees', 'manage_holidays', 'view_team_absences', 'manage_overtime'])
             <li>
                 <div class="text-xs font-semibold leading-6 text-slate-400 uppercase tracking-wider">{{ app()->getLocale() === 'de' ? 'Verwaltung' : 'Management' }}</div>
                 <ul role="list" class="-mx-2 mt-2 space-y-1">
-                    @if(auth()->user()->hasRole('admin'))
+                    @can('manage_employees')
                     <li>
                         <a href="{{ route('employees.index') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -128,7 +128,7 @@
                             {{ app()->getLocale() === 'de' ? 'Überstunden verwalten' : 'Manage Overtime' }}
                         </a>
                     </li>
-                    @endif
+                    @endcan
                     <li>
                         <a href="{{ route('absences.team') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -139,7 +139,7 @@
                             {{ __('app.team_requests') }}
                         </a>
                     </li>
-                    @if(auth()->user()->hasRole('admin'))
+                    @can('view_all_absences')
                     <li>
                         <a href="{{ route('reports.index') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
@@ -150,14 +150,14 @@
                             {{ __('app.reports') }}
                         </a>
                     </li>
-                    @endif
+                    @endcan
                 </ul>
             </li>
-            @endif
+            @endcanany
 
             {{-- Settings at bottom (admin only) --}}
             <li class="mt-auto">
-                @if(auth()->user()->hasRole('admin'))
+                @can('manage_employees')
                 <a href="{{ route('settings') }}"
                    class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
                           {{ request()->routeIs('settings') ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
@@ -167,7 +167,7 @@
                     </svg>
                     {{ __('app.settings') }}
                 </a>
-                @endif
+                @endcan
             </li>
         </ul>
     </nav>

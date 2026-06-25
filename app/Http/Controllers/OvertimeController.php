@@ -32,7 +32,7 @@ class OvertimeController extends Controller
     public function admin(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasRole('admin')) {
+        if (!$user->can('manage_overtime')) {
             abort(403);
         }
 
@@ -59,7 +59,7 @@ class OvertimeController extends Controller
     public function storeAdjustment(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasRole('admin')) {
+        if (!$user->can('manage_overtime')) {
             abort(403);
         }
 
@@ -102,7 +102,7 @@ class OvertimeController extends Controller
     public function bulkStore(Request $request)
     {
         $user = $request->user();
-        if (!$user->hasRole('admin')) {
+        if (!$user->can('manage_overtime')) {
             abort(403);
         }
 

@@ -19,7 +19,7 @@ class DashboardController extends Controller
 
         $pendingRequests = AbsenceRequest::where('organization_id', $user->organization_id)
             ->where('status', 'pending')
-            ->when(!$user->hasRole('admin'), function ($query) use ($user) {
+            ->when(!$user->can('view_all_absences'), function ($query) use ($user) {
                 $query->whereHas('user', fn($q) => $q->where('manager_id', $user->id));
             })
             ->count();
