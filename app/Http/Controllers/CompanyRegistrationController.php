@@ -60,15 +60,6 @@ class CompanyRegistrationController extends Controller
 
         $user->assignRole('admin');
 
-        VacationBalance::create([
-            'user_id' => $user->id,
-            'organization_id' => $organization->id,
-            'year' => now()->year,
-            'total_days' => 30,
-            'used_days' => 0,
-            'remaining_days' => 30,
-        ]);
-
         event(new Registered($user));
         Auth::login($user);
 
