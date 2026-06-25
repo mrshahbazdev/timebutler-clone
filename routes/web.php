@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/absences/{absence}/approve', [AbsenceController::class, 'approve'])->name('absences.approve');
     Route::post('/absences/{absence}/reject', [AbsenceController::class, 'reject'])->name('absences.reject');
     Route::post('/absences/{absence}/cancel', [AbsenceController::class, 'cancel'])->name('absences.cancel');
+    Route::post('/absences/{absence}/convert', [AbsenceController::class, 'convert'])->name('absences.convert');
     Route::get('/absences/{absence}/decision-pdf', [AbsenceController::class, 'decisionPdf'])->name('absences.decision-pdf');
 
     // Time Tracking

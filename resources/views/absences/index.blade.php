@@ -110,6 +110,16 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                         @if(in_array($absence->status, ['pending', 'approved']))
+                        @if($absence->request_type === 'blocked' && $absence->status === 'pending')
+                        <form action="{{ route('absences.convert', $absence) }}" method="POST" class="inline">
+                            @csrf
+                            <button type="submit" class="text-gray-400 hover:text-blue-500 transition-colors mr-2" title="{{ __('app.request_vacation') }}">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                                </svg>
+                            </button>
+                        </form>
+                        @endif
                         <form action="{{ route('absences.cancel', $absence) }}" method="POST" onsubmit="return confirm('{{ __('app.confirm_cancel') }}')" class="inline">
                             @csrf
                             <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors" title="{{ __('app.cancel') }}">

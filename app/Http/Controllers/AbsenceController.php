@@ -34,6 +34,7 @@ class AbsenceController extends Controller
 
         $requestedDays = AbsenceRequest::where('user_id', $user->id)
             ->where('status', 'pending')
+            ->where('request_type', 'request')
             ->whereHas('absenceType', fn($q) => $q->where('deducts_vacation', true))
             ->sum('total_days');
 
@@ -96,7 +97,7 @@ class AbsenceController extends Controller
             $totalDays -= 0.5;
         }
 
-        $status = $requestType === 'blocked' ? 'approved' : 'pending';
+        $status = 'pending';
 
         $absence = AbsenceRequest::create([
             'user_id' => $user->id,
@@ -111,8 +112,6 @@ class AbsenceController extends Controller
             'request_type' => $requestType,
             'substitute_id' => $validated['substitute_id'] ?? null,
             'notes' => $validated['notes'] ?? null,
-            'approved_by' => $requestType === 'blocked' ? $user->id : null,
-            'approved_at' => $requestType === 'blocked' ? now() : null,
         ]);
 
         if ($status === 'approved') {
@@ -151,6 +150,28 @@ class AbsenceController extends Controller
 
         return redirect()->route('absences.index')
             ->with('success', __('app.cancelled'));
+    }
+
+    public function convert(AbsenceRequest $absence)
+    {
+        $user = auth()->user();
+
+        if ($absence->user_id !== $user->id || $absence->request_type !== 'blocked' || $absence->status !== 'pending') {
+            abort(403);
+        }
+
+        $absence->update(['request_type' => 'request']);
+
+        if ($user->manager) {
+            try {
+                $user->manager->notify(new AbsenceRequestNotification($absence));
+            } catch (\Exception $e) {
+                // Mail not configured, continue silently
+            }
+        }
+
+        return redirect()->route('absences.index')
+            ->with('success', __('app.success'));
     }
 
     public function approve(AbsenceRequest $absence)
@@ -206,6 +227,7 @@ class AbsenceController extends Controller
         }
 
         $absences = $query
+            ->where('request_type', 'request')
             ->when($request->get('status'), fn($q, $s) => $q->where('status', $s))
             ->with(['user', 'absenceType'])
             ->latest()
