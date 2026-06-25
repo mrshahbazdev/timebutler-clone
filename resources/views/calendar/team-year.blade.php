@@ -129,13 +129,13 @@
                                             X
                                         @endif
                                     </div>
-                                @elseif($dayData['holiday'])
-                                    @php $holiday = $dayData['holiday']; @endphp
-                                    @if($holiday->type === 'public_holiday')
-                                        <div class="h-5 w-full bg-amber-100" title="{{ $holiday->name_de ?? $holiday->name }}"></div>
-                                    @else
-                                        <div class="h-5 w-full bg-amber-50 border-b border-dashed border-amber-300" title="{{ $holiday->name_de ?? $holiday->name }}"></div>
-                                    @endif
+                                @elseif($dayData['holidays'] && $dayData['holidays']->isNotEmpty())
+                                    @php
+                                        $isPublicHoliday = $dayData['holidays']->contains('type', 'public_holiday');
+                                        $isSchoolBreak = $dayData['holidays']->contains('type', 'school_break');
+                                        $titles = $dayData['holidays']->map(fn($h) => $h->name_de ?? $h->name)->join(', ');
+                                    @endphp
+                                    <div class="h-5 w-full {{ $isPublicHoliday && $isSchoolBreak ? 'bg-amber-100 border-b-2 border-dashed border-amber-400' : ($isPublicHoliday ? 'bg-amber-100' : 'bg-amber-50 border-b border-dashed border-amber-300') }}" title="{{ $titles }}"></div>
                                 @elseif($dayData['is_weekend'])
                                     <div class="h-5 w-full bg-gray-200"></div>
                                 @else
@@ -150,6 +150,12 @@
         </div>
     </div>
     @endforeach
+
+    @if($teamMembers->hasPages())
+    <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-4 mb-8">
+        {{ $teamMembers->links() }}
+    </div>
+    @endif
 
     {{-- Legend --}}
     <div class="rounded-xl bg-white shadow-sm ring-1 ring-gray-900/5 p-4">

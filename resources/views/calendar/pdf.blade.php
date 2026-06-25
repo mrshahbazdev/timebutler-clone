@@ -42,10 +42,10 @@
             <tr>
                 <td class="name">{{ $row['member']->name }}</td>
                 @foreach($row['days'] as $d => $dayData)
-                <td class="{{ $dayData['is_weekend'] ? 'weekend' : '' }}" style="{{ $dayData['absence'] ? 'background-color: ' . ($dayData['absence']->absenceType->color ?? '#6b7280') . '; color: white; font-weight: bold;' : ($dayData['holiday'] ? 'background-color: #fee2e2; color: #dc2626;' : '') }}">
+                <td class="{{ $dayData['is_weekend'] ? 'weekend' : '' }}" style="{{ $dayData['absence'] ? 'background-color: ' . ($dayData['absence']->absenceType->color ?? '#6b7280') . '; color: white; font-weight: bold;' : ($dayData['holidays'] && $dayData['holidays']->isNotEmpty() ? 'background-color: #fee2e2; color: #dc2626;' : '') }}">
                     @if($dayData['absence'])
                         {{ strtoupper(substr($dayData['absence']->absenceType->name ?? 'A', 0, 1)) }}
-                    @elseif($dayData['holiday'])
+                    @elseif($dayData['holidays'] && $dayData['holidays']->isNotEmpty())
                         F
                     @endif
                 </td>

@@ -100,9 +100,16 @@
                                  title="{{ $absence->absenceType->name ?? '' }} ({{ __('app.' . $absence->status) }})">
                                 {{ strtoupper(substr($absence->absenceType->icon ?? $absence->absenceType->name ?? 'A', 0, 1)) }}
                             </div>
-                        @elseif($dayData['holiday'])
-                            <div class="h-6 w-full rounded-sm bg-red-100 flex items-center justify-center" title="{{ $dayData['holiday']->name_de ?? $dayData['holiday']->name }}">
-                                <span class="text-red-500 text-[10px] font-bold">F</span>
+                        @elseif($dayData['holidays'] && $dayData['holidays']->isNotEmpty())
+                            @php
+                                $isPublicHoliday = $dayData['holidays']->contains('type', 'public_holiday');
+                                $isSchoolBreak = $dayData['holidays']->contains('type', 'school_break');
+                                $titles = $dayData['holidays']->map(fn($h) => $h->name_de ?? $h->name)->join(', ');
+                            @endphp
+                            <div class="h-6 w-full rounded-sm {{ $isPublicHoliday && $isSchoolBreak ? 'bg-red-100 border-b-2 border-dashed border-amber-400' : ($isPublicHoliday ? 'bg-red-100' : 'bg-amber-50 border-b border-dashed border-amber-300') }} flex items-center justify-center" title="{{ $titles }}">
+                                @if($isPublicHoliday)
+                                    <span class="text-red-500 text-[10px] font-bold">F</span>
+                                @endif
                             </div>
                         @elseif($dayData['is_weekend'])
                             <div class="h-6 w-full bg-gray-100 rounded-sm"></div>
@@ -115,6 +122,11 @@
                 @endforeach
             </tbody>
         </table>
+        @if($teamMembers->hasPages())
+        <div class="border-t border-gray-200 px-6 py-3 bg-white">
+            {{ $teamMembers->links() }}
+        </div>
+        @endif
     </div>
 
     {{-- Legend --}}

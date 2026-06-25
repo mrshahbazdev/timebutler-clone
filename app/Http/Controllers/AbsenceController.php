@@ -114,6 +114,29 @@ class AbsenceController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
+        foreach ($period as $date) {
+            if ($date->isWeekend()) {
+                continue;
+            }
+            if (in_array($date->format('Y-m-d'), $holidayDates)) {
+                continue;
+            }
+
+            $deducted = 1.0;
+            if ($request->boolean('half_day_start') && $date->format('Y-m-d') === $startDate->format('Y-m-d')) {
+                $deducted -= 0.5;
+            }
+            if ($request->boolean('half_day_end') && $date->format('Y-m-d') === $endDate->format('Y-m-d')) {
+                $deducted -= 0.5;
+            }
+
+            \App\Models\AbsenceDay::create([
+                'absence_request_id' => $absence->id,
+                'date' => $date->format('Y-m-d'),
+                'deducted_days' => $deducted,
+            ]);
+        }
+
         if ($status === 'approved') {
             app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, $totalDays);
         }
@@ -142,11 +165,13 @@ class AbsenceController extends Controller
             return redirect()->back()->with('error', __('app.cannot_cancel'));
         }
 
-        if ($absence->status === 'approved') {
+        $wasApproved = $absence->status === 'approved';
+        
+        $absence->update(['status' => 'cancelled']);
+
+        if ($wasApproved) {
             app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, -$absence->total_days);
         }
-
-        $absence->update(['status' => 'cancelled']);
 
         return redirect()->route('absences.index')
             ->with('success', __('app.cancelled'));
@@ -195,9 +220,7 @@ class AbsenceController extends Controller
 
     public function reject(Request $request, AbsenceRequest $absence)
     {
-        if ($absence->status === 'approved') {
-            app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, -$absence->total_days);
-        }
+        $wasApproved = $absence->status === 'approved';
 
         $absence->update([
             'status' => 'rejected',
@@ -205,6 +228,10 @@ class AbsenceController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        if ($wasApproved) {
+            app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, -$absence->total_days);
+        }
 
         try {
             $absence->user->notify(new AbsenceDecisionNotification($absence, 'rejected'));

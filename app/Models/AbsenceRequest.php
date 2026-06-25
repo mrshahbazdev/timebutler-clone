@@ -57,4 +57,9 @@ class AbsenceRequest extends Model
     {
         return $this->status === 'approved';
     }
+
+    public function absenceDays(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AbsenceDay::class);
+    }
 }

@@ -68,9 +68,11 @@
                                 if ($isPending) {
                                     $content .= '?';
                                 }
-                            } elseif ($dayData['holiday']) {
-                                $holiday = $dayData['holiday'];
-                                if ($holiday->type === 'public_holiday') {
+                            } elseif ($dayData['holidays'] && $dayData['holidays']->isNotEmpty()) {
+                                $isPublicHoliday = $dayData['holidays']->contains('type', 'public_holiday');
+                                $isSchoolBreak = $dayData['holidays']->contains('type', 'school_break');
+                                
+                                if ($isPublicHoliday) {
                                     $class = 'holiday-cell';
                                     $content = 'F';
                                 } else {

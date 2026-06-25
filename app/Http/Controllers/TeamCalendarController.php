@@ -30,7 +30,7 @@ class TeamCalendarController extends Controller
             $teamQuery->where('department_id', $departmentId);
         }
 
-        $teamMembers = $teamQuery->with('department')->orderBy('name')->get();
+        $teamMembers = $teamQuery->with('department')->orderBy('name')->paginate(15)->withQueryString();
 
         $absences = AbsenceRequest::where('organization_id', $user->organization_id)
             ->whereIn('user_id', $teamMembers->pluck('id'))
@@ -69,7 +69,7 @@ class TeamCalendarController extends Controller
                 'date' => $date,
                 'dateStr' => $dateStr,
                 'is_weekend' => $date->isWeekend(),
-                'holiday' => isset($holidays[$dateStr]) ? $holidays[$dateStr]->first() : null,
+                'holidays' => isset($holidays[$dateStr]) ? $holidays[$dateStr] : collect(),
             ];
         }
 
@@ -80,7 +80,7 @@ class TeamCalendarController extends Controller
                 $days[$d] = [
                     'date' => $mDay['date'],
                     'is_weekend' => $mDay['is_weekend'],
-                    'holiday' => $mDay['holiday'],
+                    'holidays' => $mDay['holidays'],
                     'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
                 ];
             }
@@ -94,7 +94,7 @@ class TeamCalendarController extends Controller
         $departments = \App\Models\Department::where('organization_id', $user->organization_id)->get();
 
         return view('calendar.team', compact(
-            'calendarData', 'month', 'year', 'daysInMonth', 'startOfMonth', 'departments', 'departmentId'
+            'calendarData', 'teamMembers', 'month', 'year', 'daysInMonth', 'startOfMonth', 'departments', 'departmentId'
         ));
     }
 
@@ -114,7 +114,7 @@ class TeamCalendarController extends Controller
             $teamQuery->where('department_id', $departmentId);
         }
 
-        $teamMembers = $teamQuery->with('department')->orderBy('name')->get();
+        $teamMembers = $teamQuery->with('department')->orderBy('name')->paginate(15)->withQueryString();
 
         $absences = AbsenceRequest::where('organization_id', $user->organization_id)
             ->whereIn('user_id', $teamMembers->pluck('id'))
@@ -169,7 +169,7 @@ class TeamCalendarController extends Controller
                 $monthDays[$d] = [
                     'dateStr' => $dateStr,
                     'is_weekend' => $isWeekend,
-                    'holiday' => isset($holidays[$dateStr]) ? $holidays[$dateStr]->first() : null,
+                    'holidays' => isset($holidays[$dateStr]) ? $holidays[$dateStr] : collect(),
                 ];
             }
 
@@ -180,7 +180,7 @@ class TeamCalendarController extends Controller
                 foreach ($monthDays as $d => $mDay) {
                     $days[$d] = [
                         'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
-                        'holiday' => $mDay['holiday'],
+                        'holidays' => $mDay['holidays'],
                         'is_weekend' => $mDay['is_weekend'],
                     ];
                 }
@@ -205,7 +205,7 @@ class TeamCalendarController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return view('calendar.team-year', compact('monthsData', 'year', 'departments', 'departmentId', 'absenceTypes'));
+        return view('calendar.team-year', compact('monthsData', 'teamMembers', 'year', 'departments', 'departmentId', 'absenceTypes'));
     }
 
     public function yearPdf(Request $request)
@@ -283,7 +283,7 @@ class TeamCalendarController extends Controller
                 foreach ($monthDays as $d => $mDay) {
                     $days[$d] = [
                         'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
-                        'holiday' => $mDay['holiday'],
+                        'holidays' => $mDay['holidays'],
                         'is_weekend' => $mDay['is_weekend'],
                     ];
                 }
@@ -369,7 +369,7 @@ class TeamCalendarController extends Controller
                 'date' => $date,
                 'dateStr' => $dateStr,
                 'is_weekend' => $date->isWeekend(),
-                'holiday' => isset($holidays[$dateStr]) ? $holidays[$dateStr]->first() : null,
+                'holidays' => isset($holidays[$dateStr]) ? $holidays[$dateStr] : collect(),
             ];
         }
 
@@ -380,7 +380,7 @@ class TeamCalendarController extends Controller
                 $days[$d] = [
                     'date' => $mDay['date'],
                     'is_weekend' => $mDay['is_weekend'],
-                    'holiday' => $mDay['holiday'],
+                    'holidays' => $mDay['holidays'],
                     'absence' => $absenceMap[$member->id][$mDay['dateStr']] ?? null,
                 ];
             }
