@@ -94,12 +94,25 @@
                     @foreach($row['days'] as $d => $dayData)
                     <td class="px-0.5 py-1 text-center {{ $dayData['is_weekend'] ? 'bg-gray-50' : '' }}">
                         @if($dayData['absence'])
-                            @php $absence = $dayData['absence']; @endphp
-                            <div class="h-6 w-full rounded-sm flex items-center justify-center text-white text-[10px] font-bold cursor-default"
-                                 style="background-color: {{ $absence->absenceType->color ?? '#6b7280' }}; opacity: {{ $absence->status === 'pending' ? '0.6' : '1' }}"
-                                 title="{{ $absence->absenceType->name ?? '' }} ({{ __('app.' . $absence->status) }})">
-                                {{ strtoupper(substr($absence->absenceType->icon ?? $absence->absenceType->name ?? 'A', 0, 1)) }}
-                            </div>
+                            @php 
+                                $absence = $dayData['absence']; 
+                                $color = $absence->absenceType->color ?? '#6b7280';
+                                $isPending = $absence->status === 'pending';
+                                $isBlocked = $absence->request_type === 'blocked';
+                            @endphp
+                            @if($isBlocked)
+                                <div class="h-6 w-full rounded-sm flex items-center justify-center text-[10px] font-bold cursor-default"
+                                     style="border: 2px dashed {{ $color }}; color: {{ $color }};"
+                                     title="{{ $absence->absenceType->name ?? '' }} ({{ __('app.blocked') ?? 'Blocked' }})">
+                                    {{ strtoupper(substr($absence->absenceType->icon ?? $absence->absenceType->name ?? 'A', 0, 1)) }}
+                                </div>
+                            @else
+                                <div class="h-6 w-full rounded-sm flex items-center justify-center text-white text-[10px] font-bold cursor-default"
+                                     style="background-color: {{ $color }}; opacity: {{ $isPending ? '0.6' : '1' }}"
+                                     title="{{ $absence->absenceType->name ?? '' }} ({{ __('app.' . $absence->status) }})">
+                                    {{ strtoupper(substr($absence->absenceType->icon ?? $absence->absenceType->name ?? 'A', 0, 1)) }}
+                                </div>
+                            @endif
                         @elseif($dayData['holidays'] && $dayData['holidays']->isNotEmpty())
                             @php
                                 $isPublicHoliday = $dayData['holidays']->contains('type', 'public_holiday');

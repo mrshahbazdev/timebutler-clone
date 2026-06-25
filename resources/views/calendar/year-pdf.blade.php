@@ -63,10 +63,17 @@
                                 $absence = $dayData['absence'];
                                 $color = $absence->absenceType->color ?? '#6b7280';
                                 $isPending = $absence->status === 'pending';
-                                $style = 'background-color: ' . $color . '; color: white; font-weight: bold;' . ($isPending ? ' opacity: 0.6;' : '');
-                                $content = strtoupper(substr($absence->absenceType->name ?? 'A', 0, 1));
-                                if ($isPending) {
-                                    $content .= '?';
+                                $isBlocked = $absence->request_type === 'blocked';
+                                
+                                if ($isBlocked) {
+                                    $style = 'border: 1px dashed ' . $color . '; color: ' . $color . '; font-weight: bold; background-color: transparent;';
+                                    $content = strtoupper(substr($absence->absenceType->name ?? 'A', 0, 1));
+                                } else {
+                                    $style = 'background-color: ' . $color . '; color: white; font-weight: bold;' . ($isPending ? ' opacity: 0.6;' : '');
+                                    $content = strtoupper(substr($absence->absenceType->name ?? 'A', 0, 1));
+                                    if ($isPending) {
+                                        $content .= '?';
+                                    }
                                 }
                             } elseif ($dayData['holidays'] && $dayData['holidays']->isNotEmpty()) {
                                 $isPublicHoliday = $dayData['holidays']->contains('type', 'public_holiday');
