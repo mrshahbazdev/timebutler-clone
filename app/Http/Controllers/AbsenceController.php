@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAbsenceRequest;
 use App\Models\AbsenceRequest;
 use App\Models\AbsenceType;
 use App\Models\Holiday;
@@ -26,28 +27,10 @@ class AbsenceController extends Controller
             ->latest()
             ->paginate(15);
 
+        app(\App\Services\VacationBalanceService::class)->syncUserBalance($user);
         $vacationBalance = VacationBalance::where('user_id', $user->id)
             ->where('year', now()->year)
             ->first();
-
-        // Auto-sync: ensure VacationBalance matches employee's vacation_days_per_year
-        if ($vacationBalance && $vacationBalance->total_days != $user->vacation_days_per_year) {
-            $diff = $user->vacation_days_per_year - $vacationBalance->total_days;
-            $vacationBalance->update([
-                'total_days' => $user->vacation_days_per_year,
-                'remaining_days' => max(0, $vacationBalance->remaining_days + $diff),
-            ]);
-            $vacationBalance->refresh();
-        } elseif (!$vacationBalance) {
-            $vacationBalance = VacationBalance::create([
-                'user_id' => $user->id,
-                'organization_id' => $user->organization_id,
-                'year' => now()->year,
-                'total_days' => $user->vacation_days_per_year,
-                'used_days' => 0,
-                'remaining_days' => $user->vacation_days_per_year,
-            ]);
-        }
 
         $requestedDays = AbsenceRequest::where('user_id', $user->id)
             ->where('status', 'pending')
@@ -76,43 +59,15 @@ class AbsenceController extends Controller
         return view('absences.create', compact('absenceTypes', 'colleagues', 'requestType'));
     }
 
-    public function store(Request $request)
+    public function store(StoreAbsenceRequest $request)
     {
-        $validated = $request->validate([
-            'absence_type_id' => 'required|exists:absence_types,id',
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'half_day_start' => 'boolean',
-            'half_day_end' => 'boolean',
-            'substitute_id' => 'nullable|exists:users,id',
-            'notes' => 'nullable|string|max:1000',
-            'request_type' => 'in:request,blocked',
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
         $requestType = $validated['request_type'] ?? 'request';
 
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = Carbon::parse($validated['end_date']);
-
-        // Check for overlapping absences (same user, non-cancelled/rejected)
-        $overlap = AbsenceRequest::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'approved'])
-            ->where(function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('start_date', [$startDate, $endDate])
-                  ->orWhereBetween('end_date', [$startDate, $endDate])
-                  ->orWhere(function ($q2) use ($startDate, $endDate) {
-                      $q2->where('start_date', '<=', $startDate)
-                         ->where('end_date', '>=', $endDate);
-                  });
-            })
-            ->exists();
-
-        if ($overlap) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['start_date' => __('app.absence_overlap_error')]);
-        }
 
         // Count weekdays excluding public holidays
         $holidayDates = Holiday::where('organization_id', $user->organization_id)
@@ -161,7 +116,7 @@ class AbsenceController extends Controller
         ]);
 
         if ($status === 'approved') {
-            $this->updateVacationBalance($absence, $totalDays);
+            app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, $totalDays);
         }
 
         if ($requestType === 'request' && $user->manager) {
@@ -189,7 +144,7 @@ class AbsenceController extends Controller
         }
 
         if ($absence->status === 'approved') {
-            $this->updateVacationBalance($absence, -$absence->total_days);
+            app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, -$absence->total_days);
         }
 
         $absence->update(['status' => 'cancelled']);
@@ -206,7 +161,7 @@ class AbsenceController extends Controller
             'approved_at' => now(),
         ]);
 
-        $this->updateVacationBalance($absence, $absence->total_days);
+        app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, $absence->total_days);
 
         try {
             $absence->user->notify(new AbsenceDecisionNotification($absence, 'approved'));
@@ -220,7 +175,7 @@ class AbsenceController extends Controller
     public function reject(Request $request, AbsenceRequest $absence)
     {
         if ($absence->status === 'approved') {
-            $this->updateVacationBalance($absence, -$absence->total_days);
+            app(\App\Services\VacationBalanceService::class)->adjustBalanceForAbsence($absence, -$absence->total_days);
         }
 
         $absence->update([
@@ -269,28 +224,4 @@ class AbsenceController extends Controller
         return $pdf->download("decision-{$absence->id}.pdf");
     }
 
-    private function updateVacationBalance(AbsenceRequest $absence, float $days)
-    {
-        $absence->loadMissing(['absenceType', 'user']);
-        
-        if ($absence->absenceType && $absence->absenceType->deducts_vacation) {
-            $year = \Carbon\Carbon::parse($absence->start_date)->year;
-            $balance = VacationBalance::firstOrCreate(
-                [
-                    'user_id' => $absence->user_id,
-                    'year' => $year,
-                ],
-                [
-                    'organization_id' => $absence->organization_id,
-                    'total_days' => $absence->user->vacation_days_per_year ?? 0,
-                    'used_days' => 0,
-                    'remaining_days' => $absence->user->vacation_days_per_year ?? 0,
-                ]
-            );
-
-            $balance->used_days += $days;
-            $balance->remaining_days -= $days;
-            $balance->save();
-        }
-    }
 }

@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreEmployeeRequest;
+use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\VacationBalance;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
 class EmployeeController extends Controller
@@ -53,26 +54,10 @@ class EmployeeController extends Controller
         return view('employees.create', compact('departments', 'managers', 'roles'));
     }
 
-    public function store(Request $request)
+    public function store(StoreEmployeeRequest $request)
     {
         $user = $request->user();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'department_id' => 'nullable|exists:departments,id',
-            'manager_id' => 'nullable|exists:users,id',
-            'employee_number' => 'nullable|string|max:50',
-            'position' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'weekly_hours' => 'required|numeric|min:0|max:60',
-            'vacation_days_per_year' => 'required|integer|min:0|max:60',
-            'employment_start' => 'nullable|date',
-            'employment_end' => 'nullable|date|after:employment_start',
-            'role' => 'required|exists:roles,name',
-            'locale' => 'required|in:en,de',
-        ]);
+        $validated = $request->validated();
 
         $employee = User::create([
             'name' => $validated['name'],
@@ -94,15 +79,6 @@ class EmployeeController extends Controller
         ]);
 
         $employee->assignRole($validated['role']);
-
-        VacationBalance::create([
-            'user_id' => $employee->id,
-            'organization_id' => $user->organization_id,
-            'year' => now()->year,
-            'total_days' => $validated['vacation_days_per_year'],
-            'used_days' => 0,
-            'remaining_days' => $validated['vacation_days_per_year'],
-        ]);
 
         return redirect()->route('employees.index')
             ->with('success', __('app.success'));
@@ -144,25 +120,9 @@ class EmployeeController extends Controller
         return view('employees.edit', compact('employee', 'departments', 'managers', 'roles'));
     }
 
-    public function update(Request $request, User $employee)
+    public function update(UpdateEmployeeRequest $request, User $employee)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($employee->id)],
-            'password' => 'nullable|string|min:8|confirmed',
-            'department_id' => 'nullable|exists:departments,id',
-            'manager_id' => 'nullable|exists:users,id',
-            'employee_number' => 'nullable|string|max:50',
-            'position' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'weekly_hours' => 'required|numeric|min:0|max:60',
-            'vacation_days_per_year' => 'required|integer|min:0|max:60',
-            'employment_start' => 'nullable|date',
-            'employment_end' => 'nullable|date|after:employment_start',
-            'role' => 'required|exists:roles,name',
-            'locale' => 'required|in:en,de',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $updateData = collect($validated)->except(['password', 'role', 'is_active'])->toArray();
         $updateData['is_active'] = $request->boolean('is_active', true);
@@ -173,28 +133,6 @@ class EmployeeController extends Controller
 
         $employee->update($updateData);
         $employee->syncRoles([$validated['role']]);
-
-        // Sync VacationBalance total_days when vacation_days_per_year changes
-        $vacationBalance = VacationBalance::where('user_id', $employee->id)
-            ->where('year', now()->year)
-            ->first();
-
-        if ($vacationBalance) {
-            $diff = $validated['vacation_days_per_year'] - $vacationBalance->total_days;
-            $vacationBalance->update([
-                'total_days' => $validated['vacation_days_per_year'],
-                'remaining_days' => max(0, $vacationBalance->remaining_days + $diff),
-            ]);
-        } else {
-            VacationBalance::create([
-                'user_id' => $employee->id,
-                'organization_id' => $employee->organization_id,
-                'year' => now()->year,
-                'total_days' => $validated['vacation_days_per_year'],
-                'used_days' => 0,
-                'remaining_days' => $validated['vacation_days_per_year'],
-            ]);
-        }
 
         return redirect()->route('employees.index')
             ->with('success', __('app.success'));

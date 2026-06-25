@@ -31,28 +31,10 @@ class DashboardController extends Controller
             ->with(['user', 'absenceType'])
             ->get();
 
+        app(\App\Services\VacationBalanceService::class)->syncUserBalance($user);
         $vacationBalance = VacationBalance::where('user_id', $user->id)
             ->where('year', now()->year)
             ->first();
-
-        // Auto-sync: ensure VacationBalance matches employee's vacation_days_per_year
-        if ($vacationBalance && $vacationBalance->total_days != $user->vacation_days_per_year) {
-            $diff = $user->vacation_days_per_year - $vacationBalance->total_days;
-            $vacationBalance->update([
-                'total_days' => $user->vacation_days_per_year,
-                'remaining_days' => max(0, $vacationBalance->remaining_days + $diff),
-            ]);
-            $vacationBalance->refresh();
-        } elseif (!$vacationBalance) {
-            $vacationBalance = VacationBalance::create([
-                'user_id' => $user->id,
-                'organization_id' => $user->organization_id,
-                'year' => now()->year,
-                'total_days' => $user->vacation_days_per_year,
-                'used_days' => 0,
-                'remaining_days' => $user->vacation_days_per_year,
-            ]);
-        }
 
         $todayEntry = TimeEntry::where('user_id', $user->id)
             ->where('date', today())
