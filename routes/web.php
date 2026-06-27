@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/absences/{absence}/decision-pdf', [AbsenceController::class, 'decisionPdf'])->name('absences.decision-pdf');
 
     // Time Tracking
+    Route::get('/time-tracking/team', [TimeTrackingController::class, 'team'])->name('time-tracking.team');
     Route::resource('time-tracking', TimeTrackingController::class);
     Route::post('/time-tracking/clock-in', [TimeTrackingController::class, 'clockIn'])->name('time-tracking.clock-in');
     Route::post('/time-tracking/clock-out', [TimeTrackingController::class, 'clockOut'])->name('time-tracking.clock-out');

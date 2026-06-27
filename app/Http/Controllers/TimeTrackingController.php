@@ -25,6 +25,39 @@ class TimeTrackingController extends Controller
         return view('time-tracking.index', compact('entries', 'todayEntry', 'todayEntries', 'totalMinutesToday'));
     }
 
+    public function team(Request $request)
+    {
+        $user = $request->user();
+        
+        if (!$user->can('manage_employees') && !$user->can('manage_overtime') && !$user->can('view_team_absences') && !$user->hasRole('admin')) {
+            abort(403);
+        }
+
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->endOfMonth()->format('Y-m-d'));
+        $employeeId = $request->get('employee_id');
+
+        $query = TimeEntry::where('organization_id', $user->organization_id)
+            ->whereBetween('date', [\Carbon\Carbon::parse($startDate), \Carbon\Carbon::parse($endDate)])
+            ->with('user');
+
+        if ($employeeId) {
+            $query->where('user_id', $employeeId);
+        }
+
+        $entries = $query->orderByDesc('date')
+            ->orderBy('user_id')
+            ->paginate(15)
+            ->withQueryString();
+
+        $employees = \App\Models\User::where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('time-tracking.team', compact('entries', 'employees', 'startDate', 'endDate', 'employeeId'));
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

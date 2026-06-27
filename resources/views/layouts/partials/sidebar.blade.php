@@ -130,6 +130,16 @@
                     </li>
                     @endcan
                     <li>
+                        <a href="{{ route('time-tracking.team') }}"
+                           class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
+                                  {{ request()->routeIs('time-tracking.team') ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                            <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {{ app()->getLocale() === 'de' ? 'Team-Zeiterfassung' : 'Team Time Tracking' }}
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('absences.team') }}"
                            class="group flex gap-x-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150
                                   {{ request()->routeIs('absences.team') ? 'bg-blue-600/20 text-blue-300' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
