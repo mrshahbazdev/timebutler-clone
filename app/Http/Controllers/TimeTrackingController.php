@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TimeEntry;
+use App\Services\OvertimeCalculator;
 use Illuminate\Http\Request;
 
 class TimeTrackingController extends Controller
@@ -90,6 +91,9 @@ class TimeTrackingController extends Controller
             'status' => 'submitted',
         ]);
 
+        $calculator = app(OvertimeCalculator::class);
+        $calculator->calculateForMonth($user, \Carbon\Carbon::parse($validated['date'])->year, \Carbon\Carbon::parse($validated['date'])->month);
+
         return redirect()->route('time-tracking.index')
             ->with('success', __('app.success'));
     }
@@ -144,6 +148,9 @@ class TimeTrackingController extends Controller
                 'total_minutes' => max(0, $totalMinutes),
                 'status' => 'submitted',
             ]);
+
+            $calculator = app(OvertimeCalculator::class);
+            $calculator->calculateForMonth($user, today()->year, today()->month);
         }
 
         return redirect()->route('time-tracking.index')
@@ -206,6 +213,9 @@ class TimeTrackingController extends Controller
             'project' => $validated['project'] ?? null,
             'notes' => $validated['notes'] ?? null,
         ]);
+
+        $calculator = app(OvertimeCalculator::class);
+        $calculator->calculateForMonth($user, $time_tracking->date->year, $time_tracking->date->month);
 
         return redirect()->route('time-tracking.index')
             ->with('success', __('app.success'));

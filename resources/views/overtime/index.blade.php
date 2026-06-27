@@ -58,15 +58,26 @@
             @php
                 $monthLabel = \Carbon\Carbon::create($balance->year, $balance->month, 1)->translatedFormat('F Y');
             @endphp
-            <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                <span class="text-sm text-gray-700">{{ $monthLabel }}</span>
-                <div class="flex items-center gap-x-4">
-                    <span class="text-sm font-medium {{ $balance->balance_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                        {{ $balance->formatted_balance }}
-                    </span>
-                    <div class="h-2 w-24 rounded-full bg-gray-100">
-                        <div class="h-2 rounded-full {{ $balance->balance_minutes >= 0 ? 'bg-green-500' : 'bg-red-500' }}"
-                             style="width: {{ min(100, (abs($balance->balance_minutes) / $maxAbs) * 100) }}%"></div>
+            <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <span class="text-sm font-medium text-gray-700 w-1/4">{{ $monthLabel }}</span>
+                <div class="flex-1 grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500 text-xs block mb-1">{{ app()->getLocale() === 'de' ? 'Automatisch' : 'Auto Calculated' }}</span>
+                        <span class="{{ $balance->calculated_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $balance->formatted_calculated }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 text-xs block mb-1">{{ app()->getLocale() === 'de' ? 'Manuell' : 'Manual' }}</span>
+                        <span class="{{ $balance->adjustment_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $balance->formatted_adjustment }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 text-xs block mb-1">{{ app()->getLocale() === 'de' ? 'Gesamt' : 'Total' }}</span>
+                        <span class="font-bold {{ $balance->balance_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $balance->formatted_balance }}
+                        </span>
                     </div>
                 </div>
             </div>

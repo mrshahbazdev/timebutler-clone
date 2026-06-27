@@ -8,9 +8,12 @@ use Illuminate\Http\Request;
 
 class OvertimeController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, \App\Services\OvertimeCalculator $calculator)
     {
         $user = $request->user();
+
+        // Ensure current month is up to date
+        $calculator->calculateForMonth($user, now()->year, now()->month);
 
         $balances = OvertimeBalance::where('user_id', $user->id)
             ->orderByDesc('year')
@@ -46,6 +49,16 @@ class OvertimeController extends Controller
         $balances = collect();
 
         if ($selectedUserId) {
+            $employee = User::find($selectedUserId);
+            if ($employee) {
+                // Ensure all months of the selected year up to current month are calculated
+                $currentMonth = $selectedYear == now()->year ? now()->month : 12;
+                $calculator = app(\App\Services\OvertimeCalculator::class);
+                for ($m = 1; $m <= $currentMonth; $m++) {
+                    $calculator->calculateForMonth($employee, $selectedYear, $m);
+                }
+            }
+
             $balances = OvertimeBalance::where('user_id', $selectedUserId)
                 ->where('year', $selectedYear)
                 ->orderBy('month')
@@ -81,17 +94,16 @@ class OvertimeController extends Controller
             $totalMinutes = -$totalMinutes;
         }
 
-        OvertimeBalance::updateOrCreate(
-            [
-                'user_id' => $employee->id,
-                'year' => $validated['year'],
-                'month' => $validated['month'],
-            ],
-            [
-                'organization_id' => $user->organization_id,
-                'balance_minutes' => $totalMinutes,
-            ]
-        );
+        $balance = OvertimeBalance::firstOrNew([
+            'user_id' => $employee->id,
+            'year' => $validated['year'],
+            'month' => $validated['month'],
+        ]);
+
+        $balance->organization_id = $user->organization_id;
+        $balance->adjustment_minutes = $totalMinutes;
+        $balance->balance_minutes = $balance->calculated_minutes + $balance->adjustment_minutes;
+        $balance->save();
 
         return redirect()->route('overtime.admin', [
             'employee_id' => $employee->id,
@@ -126,17 +138,16 @@ class OvertimeController extends Controller
                 $totalMinutes = -$totalMinutes;
             }
 
-            OvertimeBalance::updateOrCreate(
-                [
-                    'user_id' => $employee->id,
-                    'year' => $validated['year'],
-                    'month' => $entry['month'],
-                ],
-                [
-                    'organization_id' => $user->organization_id,
-                    'balance_minutes' => $totalMinutes,
-                ]
-            );
+            $balance = OvertimeBalance::firstOrNew([
+                'user_id' => $employee->id,
+                'year' => $validated['year'],
+                'month' => $entry['month'],
+            ]);
+
+            $balance->organization_id = $user->organization_id;
+            $balance->adjustment_minutes = $totalMinutes;
+            $balance->balance_minutes = $balance->calculated_minutes + $balance->adjustment_minutes;
+            $balance->save();
         }
 
         return redirect()->route('overtime.admin', [

@@ -87,19 +87,20 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{{ app()->getLocale() === 'de' ? 'Monat' : 'Month' }}</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">+/-</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ app()->getLocale() === 'de' ? 'Automatisch' : 'Auto' }}</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">+/- {{ app()->getLocale() === 'de' ? 'Manuell' : 'Manual' }}</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ __('app.hours') }}</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ __('app.minutes') }}</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ app()->getLocale() === 'de' ? 'Aktuell' : 'Current' }}</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ app()->getLocale() === 'de' ? 'Gesamt' : 'Total' }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @for($m = 1; $m <= 12; $m++)
                         @php
                             $existing = $balances->get($m);
-                            $existingMinutes = $existing ? $existing->balance_minutes : 0;
-                            $isNeg = $existingMinutes < 0;
-                            $absMin = abs($existingMinutes);
+                            $existingAdjustment = $existing ? $existing->adjustment_minutes : 0;
+                            $isNeg = $existingAdjustment < 0;
+                            $absMin = abs($existingAdjustment);
                             $h = intdiv($absMin, 60);
                             $min = $absMin % 60;
                         @endphp
@@ -107,6 +108,15 @@
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">
                                 {{ $monthNames[$m - 1] }}
                                 <input type="hidden" name="entries[{{ $m - 1 }}][month]" value="{{ $m }}">
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                @if($existing)
+                                <span class="text-sm font-medium {{ $existing->calculated_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    {{ $existing->formatted_calculated }}
+                                </span>
+                                @else
+                                <span class="text-sm text-gray-400">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <label class="inline-flex items-center gap-x-1 cursor-pointer">
@@ -126,7 +136,7 @@
                             </td>
                             <td class="px-4 py-3 text-center">
                                 @if($existing)
-                                <span class="text-sm font-medium {{ $existingMinutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <span class="text-sm font-bold {{ $existing->balance_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $existing->formatted_balance }}
                                 </span>
                                 @else
