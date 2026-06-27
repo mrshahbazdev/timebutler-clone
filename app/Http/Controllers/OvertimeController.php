@@ -16,11 +16,23 @@ class OvertimeController extends Controller
         $calculator->calculateForMonth($user, now()->year, now()->month);
 
         $balances = OvertimeBalance::where('user_id', $user->id)
-            ->orderByDesc('year')
-            ->orderByDesc('month')
+            ->orderBy('year')
+            ->orderBy('month')
             ->get();
 
         $totalMinutes = $balances->sum('balance_minutes');
+        
+        $running = 0;
+        $runningTotals = [];
+        foreach ($balances as $b) {
+            $running += $b->balance_minutes;
+            $runningTotals[$b->id] = $running;
+        }
+
+        // Reverse for display (newest first)
+        $balances = $balances->sortByDesc(function($b) {
+            return sprintf('%04d-%02d', $b->year, $b->month);
+        })->values();
 
         $currentMonth = now()->month;
         $currentYear = now()->year;
@@ -29,7 +41,7 @@ class OvertimeController extends Controller
             ->where('month', $currentMonth)
             ->first();
 
-        return view('overtime.index', compact('balances', 'totalMinutes', 'thisMonthBalance'));
+        return view('overtime.index', compact('balances', 'totalMinutes', 'thisMonthBalance', 'runningTotals'));
     }
 
     public function admin(Request $request)
@@ -59,14 +71,30 @@ class OvertimeController extends Controller
                 }
             }
 
-            $balances = OvertimeBalance::where('user_id', $selectedUserId)
-                ->where('year', $selectedYear)
+            // Get ALL balances to compute running total
+            $allBalances = OvertimeBalance::where('user_id', $selectedUserId)
+                ->orderBy('year')
                 ->orderBy('month')
-                ->get()
-                ->keyBy('month');
+                ->get();
+
+            $totalBalance = $allBalances->sum('balance_minutes');
+
+            $running = 0;
+            $runningTotals = [];
+            foreach ($allBalances as $b) {
+                $running += $b->balance_minutes;
+                if ($b->year == $selectedYear) {
+                    $runningTotals[$b->month] = $running;
+                }
+            }
+
+            $balances = $allBalances->where('year', $selectedYear)->keyBy('month');
+        } else {
+            $totalBalance = 0;
+            $runningTotals = [];
         }
 
-        return view('overtime.admin', compact('employees', 'balances', 'selectedUserId', 'selectedYear'));
+        return view('overtime.admin', compact('employees', 'balances', 'selectedUserId', 'selectedYear', 'totalBalance', 'runningTotals'));
     }
 
     public function storeAdjustment(Request $request)

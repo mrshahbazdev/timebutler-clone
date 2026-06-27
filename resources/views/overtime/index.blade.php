@@ -60,7 +60,7 @@
             @endphp
             <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                 <span class="text-sm font-medium text-gray-700 w-1/4">{{ $monthLabel }}</span>
-                <div class="flex-1 grid grid-cols-3 gap-4 text-sm">
+                <div class="flex-1 grid grid-cols-4 gap-4 text-sm">
                     <div>
                         <span class="text-gray-500 text-xs block mb-1">{{ app()->getLocale() === 'de' ? 'Automatisch' : 'Auto Calculated' }}</span>
                         <span class="{{ $balance->calculated_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
@@ -74,9 +74,21 @@
                         </span>
                     </div>
                     <div>
-                        <span class="text-gray-500 text-xs block mb-1">{{ app()->getLocale() === 'de' ? 'Gesamt' : 'Total' }}</span>
+                        <span class="text-gray-500 text-xs block mb-1">{{ app()->getLocale() === 'de' ? 'Monatssaldo' : 'Month Total' }}</span>
                         <span class="font-bold {{ $balance->balance_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ $balance->formatted_balance }}
+                        </span>
+                    </div>
+                    @php
+                        $rt = $runningTotals[$balance->id] ?? 0;
+                        $rtAbs = abs($rt);
+                        $rtSign = $rt >= 0 ? '+' : '-';
+                        $rtFormatted = sprintf('%s%d:%02d', $rtSign, intdiv($rtAbs, 60), $rtAbs % 60);
+                    @endphp
+                    <div>
+                        <span class="text-gray-500 text-xs block mb-1">{{ app()->getLocale() === 'de' ? 'Kumulierter Saldo' : 'Running Total' }}</span>
+                        <span class="font-bold {{ $rt >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $rtFormatted }}
                         </span>
                     </div>
                 </div>

@@ -91,7 +91,8 @@
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">+/- {{ app()->getLocale() === 'de' ? 'Manuell' : 'Manual' }}</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ __('app.hours') }}</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ __('app.minutes') }}</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ app()->getLocale() === 'de' ? 'Gesamt' : 'Total' }}</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ app()->getLocale() === 'de' ? 'Monatssaldo' : 'Month Total' }}</th>
+                            <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase">{{ app()->getLocale() === 'de' ? 'Kumulierter Saldo' : 'Running Total' }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -138,6 +139,21 @@
                                 @if($existing)
                                 <span class="text-sm font-bold {{ $existing->balance_minutes >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ $existing->formatted_balance }}
+                                </span>
+                                @else
+                                <span class="text-sm text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                @if($existing)
+                                @php
+                                    $rt = $runningTotals[$m] ?? 0;
+                                    $rtAbs = abs($rt);
+                                    $rtSign = $rt >= 0 ? '+' : '-';
+                                    $rtFormatted = sprintf('%s%d:%02d', $rtSign, intdiv($rtAbs, 60), $rtAbs % 60);
+                                @endphp
+                                <span class="text-sm font-bold {{ $rt >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    {{ $rtFormatted }}
                                 </span>
                                 @else
                                 <span class="text-sm text-gray-400">—</span>
