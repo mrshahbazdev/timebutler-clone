@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('time_entries', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
             $table->dropUnique('time_entries_user_id_date_unique');
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('time_entries', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
             $table->unique(['user_id', 'date'], 'time_entries_user_id_date_unique');
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 };
